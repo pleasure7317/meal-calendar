@@ -956,17 +956,14 @@ async function loadWeather() {
             return;
         }
 
-        // 현재 요약: 실황(current)이 있으면 실제 관측값 사용, 없으면 가장 가까운 예보
+        // 현재 요약: 네이버 현재 관측값 우선, 없으면 가장 가까운 시간
         const near = upcoming[0];
         if (nowEl) {
-            if (data.current && data.current.temp != null) {
-                const c = data.current;
-                // 실황엔 하늘상태(SKY)가 없으니 가까운 예보의 sky로 아이콘 보완
-                const sky = near ? near.sky : null;
-                const pty = (c.pty && c.pty !== '0') ? c.pty : (near ? near.pty : '0');
-                nowEl.textContent = `지금 ${weatherIcon(sky, pty)} ${c.temp}° ${weatherDesc(sky, pty)}`;
-            } else if (near) {
-                nowEl.textContent = `지금 ${weatherIcon(near.sky, near.pty)} ${near.temp}° ${weatherDesc(near.sky, near.pty)}`;
+            const c = (data.current && data.current.temp != null) ? data.current : near;
+            if (c) {
+                const icon = c.icon || '🌤️';
+                const desc = c.desc || '';
+                nowEl.textContent = `지금 ${icon} ${c.temp}° ${desc}`;
             }
         }
 
@@ -976,7 +973,7 @@ async function loadWeather() {
             return `
                 <div class="weather-card">
                     <span class="weather-time">${label}</span>
-                    <span class="weather-icon">${weatherIcon(h.sky, h.pty)}</span>
+                    <span class="weather-icon">${h.icon || '🌤️'}</span>
                     <span class="weather-temp">${h.temp}°</span>
                     <span class="weather-pop">💧${h.pop}%</span>
                 </div>`;
