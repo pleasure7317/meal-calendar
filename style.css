@@ -1603,10 +1603,32 @@ body::before {
         grid-template-columns: 1fr;
     }
 
+    .mood-emojis {
+        gap: 6px;
+    }
     .mood-btn {
-        width: 48px;
-        height: 48px;
-        font-size: 1.6rem;
+        width: 44px;
+        height: 44px;
+        font-size: 1.5rem;
+    }
+
+    /* 영어 카드: 좁은 폭에선 버튼을 글 아래로 내려 글이 전체 폭 사용 */
+    .english-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .english-btns {
+        width: 100%;
+    }
+    .english-note-btn {
+        flex: 1;
+        flex-direction: row;
+        gap: 6px;
+        padding: 10px 12px;
+    }
+    .english-en {
+        font-size: 1.05rem;
     }
 
     .modal {
@@ -1659,6 +1681,16 @@ body::before {
 }
 
 @media (max-width: 480px) {
+    /* 기분 이모지 8개를 한 줄에 */
+    .mood-emojis {
+        gap: 5px;
+    }
+    .mood-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.2rem;
+    }
+
     .today-meals {
         gap: 6px;
     }
