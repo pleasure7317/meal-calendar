@@ -798,6 +798,9 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 // ==================== Food Search Panel ====================
 function openFoodSearch(foodName) {
+    // AI가 붙여준 (NNNkcal) 값을 먼저 추출 (있으면 우선 사용)
+    const calMatch = foodName.match(/\((\d+)\s*kcal\)/i);
+    let cal = calMatch ? parseInt(calMatch[1], 10) : null;
     // 메뉴에 붙은 (NNNkcal) 표기는 검색·표시에서 제거
     foodName = foodName.replace(/\s*\(\s*\d+\s*kcal\s*\)\s*$/i, '').trim();
     const panel = document.getElementById('foodPanelOverlay');
@@ -806,9 +809,11 @@ function openFoodSearch(foodName) {
     const results = document.getElementById('foodSearchResults');
     const links = document.getElementById('foodLinks');
 
-    let cal = null;
-    for (const [food, c] of Object.entries(calorieDB)) {
-        if (foodName.includes(food)) { cal = c; break; }
+    // AI 칼로리가 없으면 내장 DB에서 찾기
+    if (cal == null) {
+        for (const [food, c] of Object.entries(calorieDB)) {
+            if (foodName.includes(food)) { cal = c; break; }
+        }
     }
 
     results.innerHTML = `
