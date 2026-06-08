@@ -1,7 +1,16 @@
 // ==================== Supabase Init ====================
 const SUPABASE_URL = 'https://kgwlzvmnvlzrpjatnfmt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rLsCWwHlvRDFLHa7xnV9ZQ_9HA834a-';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase = null;
+try {
+    if (window.supabase && window.supabase.createClient) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    } else {
+        console.warn('Supabase 라이브러리가 로드되지 않았습니다. DB 없이 동작합니다.');
+    }
+} catch (e) {
+    console.warn('Supabase 초기화 실패, DB 없이 동작합니다:', e);
+}
 
 // ==================== Data Store ====================
 
@@ -729,8 +738,16 @@ async function init() {
     } catch (e) {
         console.warn('DB 로드 실패, 빈 상태로 시작:', e);
     }
-    updateTodayMenu();
-    initCalendar();
+    try {
+        updateTodayMenu();
+    } catch (e) {
+        console.warn('오늘의 메뉴 표시 실패:', e);
+    }
+    try {
+        initCalendar();
+    } catch (e) {
+        console.error('달력 렌더 실패:', e);
+    }
     try {
         await restoreMood();
     } catch (e) {
