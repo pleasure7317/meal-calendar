@@ -12,6 +12,23 @@ try {
     console.warn('Supabase 초기화 실패, DB 없이 동작합니다:', e);
 }
 
+// ==================== Emoji (Twemoji) ====================
+let _emojiTimer = null;
+function refreshEmoji() {
+    if (!window.twemoji) return;
+    // 너무 자주 호출되는 걸 방지하기 위해 약간 디바운스
+    clearTimeout(_emojiTimer);
+    _emojiTimer = setTimeout(() => {
+        try {
+            twemoji.parse(document.body, {
+                folder: 'svg',
+                ext: '.svg',
+                base: 'https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/',
+            });
+        } catch (e) { /* noop */ }
+    }, 30);
+}
+
 // ==================== Data Store ====================
 
 // In-memory cache
@@ -120,6 +137,9 @@ const calorieDB = {
 // 메뉴 한 개의 칼로리 추정 (숫자 반환, 없으면 null)
 function itemCalorie(item) {
     if (!item) return null;
+    // AI가 붙여준 (NNNkcal) 숫자가 있으면 그걸 우선 사용
+    const m = item.match(/\((\d+)\s*kcal\)/i);
+    if (m) return parseInt(m[1], 10);
     for (const [food, cal] of Object.entries(calorieDB)) {
         if (item.includes(food)) return cal;
     }
@@ -141,20 +161,23 @@ function estimateCalories(menuText) {
     if (!menuText) return null;
     let total = 0;
     let found = 0;
-    const items = menuText.split(/[\n,\/·]/).map(s => s.trim()).filter(Boolean);
+    let missing = 0;
+    const items = menuText.split('\n').map(s => s.trim()).filter(Boolean);
     for (const item of items) {
-        for (const [food, cal] of Object.entries(calorieDB)) {
-            if (item.includes(food)) {
-                total += cal;
-                found++;
-                break;
-            }
+        const cal = itemCalorie(item);
+        if (cal != null) {
+            total += cal;
+            found++;
+        } else {
+            missing++;
         }
     }
     if (found === 0) {
         return items.length > 0 ? `약 ${items.length * 200}kcal (추정)` : null;
     }
-    return `약 ${total}kcal`;
+    // 일부만 매칭된 경우엔 못 찾은 메뉴를 1개당 200kcal로 보정
+    total += missing * 200;
+    return missing > 0 ? `약 ${total}kcal (추정)` : `약 ${total}kcal`;
 }
 
 // ==================== Mood Section ====================
@@ -859,4 +882,17 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
     init();
+}
+
+// 동적으로 추가되는 이모지(달력/메뉴/모달)도 자동으로 Twemoji 변환
+function startEmojiWatcher() {
+    refreshEmoji();
+    if (!window.MutationObserver) return;
+    const observer = new MutationObserver(() => refreshEmoji());
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startEmojiWatcher);
+} else {
+    startEmojiWatcher();
 }

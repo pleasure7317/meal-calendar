@@ -4,6 +4,15 @@
     box-sizing: border-box;
 }
 
+/* Twemoji 고급 이모지 인라인 표시 */
+img.emoji {
+    height: 1.1em;
+    width: 1.1em;
+    margin: 0 .05em 0 .1em;
+    vertical-align: -0.18em;
+    display: inline-block;
+}
+
 :root {
     --primary: #e8a0bf;
     --primary-light: #fce4ec;
@@ -81,7 +90,7 @@ body::before {
 /* ===== Reset Section ===== */
 .reset-section {
     text-align: center;
-    padding: 30px 20px 50px;
+    padding: 16px 20px 20px;
 }
 
 .btn-reset {
@@ -1245,33 +1254,27 @@ body::before {
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
     .today-row {
-        flex-direction: row;
-        align-items: stretch;
-        gap: 8px;
+        flex-direction: column;
     }
 
     .today-label {
-        flex-direction: column;
+        flex-direction: row;
         min-width: unset;
-        flex-shrink: 0;
-        padding: 12px 12px;
-        gap: 4px;
-        justify-content: center;
+        padding: 16px 24px;
+        gap: 12px;
     }
 
     .today-label-icon {
         margin-bottom: 0;
-        font-size: 1.5rem;
     }
 
     .today-label h2 {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
     }
 
     .today-meals {
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
-        flex: 1;
     }
 
     .today-meal-card {
