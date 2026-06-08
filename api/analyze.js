@@ -87,7 +87,7 @@ ${MENU_GLOSSARY.join(', ')}`;
                         ]
                     }
                 ],
-                max_tokens: 3000
+                max_tokens: 8000
             })
         });
 

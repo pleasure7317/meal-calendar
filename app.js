@@ -389,13 +389,18 @@ async function analyzeWithServer(base64Image, weekStart, draft) {
         throw new Error(err.error || `서버 오류 (${response.status})`);
     }
     const data = await response.json();
+    if (!data.result) throw new Error('AI 응답이 비어 있어요. 다시 시도해 주세요');
     return data.result;
 }
 
 function parseAIResponse(responseText) {
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('JSON을 찾을 수 없습니다');
-    return JSON.parse(jsonMatch[0]);
+    if (!jsonMatch) throw new Error('AI 응답 형식 오류 (다시 시도해 주세요)');
+    try {
+        return JSON.parse(jsonMatch[0]);
+    } catch (e) {
+        throw new Error('AI 응답이 중간에 끊겼어요. 사진을 더 선명하게/작게 해서 다시 시도해 주세요');
+    }
 }
 
 function fillAnalysisForm(parsed) {
@@ -457,12 +462,37 @@ function handleFile(file) {
         showToast('이미지 파일만 업로드할 수 있어요!');
         return;
     }
-    const reader = new FileReader();
-    reader.onload = e => {
-        currentImageBase64 = e.target.result;
-        previewImg.src = currentImageBase64;
+    const showPreview = (dataUrl) => {
+        currentImageBase64 = dataUrl;
+        previewImg.src = dataUrl;
         uploadPreview.style.display = '';
         uploadArea.style.display = 'none';
+    };
+    const reader = new FileReader();
+    reader.onload = e => {
+        const original = e.target.result;
+        // 큰 사진은 최대 2000px로 줄여서 전송 (용량 초과 방지 + 속도↑, 글자 선명도 유지)
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const maxDim = 2000;
+                let { width, height } = img;
+                if (Math.max(width, height) > maxDim) {
+                    const scale = maxDim / Math.max(width, height);
+                    width = Math.round(width * scale);
+                    height = Math.round(height * scale);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                showPreview(canvas.toDataURL('image/jpeg', 0.9));
+            } catch (err) {
+                showPreview(original); // 변환 실패 시 원본 사용
+            }
+        };
+        img.onerror = () => showPreview(original);
+        img.src = original;
     };
     reader.readAsDataURL(file);
 }
