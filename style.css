@@ -1611,10 +1611,10 @@ body::before {
 /* ========== Toast ========== */
 .toast {
     position: fixed;
-    top: 52%;
-    bottom: auto;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 130px);
+    top: auto;
     left: 50%;
-    transform: translate(-50%, -50%) scale(0.92);
+    transform: translateX(-50%) translateY(16px);
     background: rgba(55, 71, 79, 0.92);
     color: white;
     padding: 12px 28px;
@@ -1632,7 +1632,7 @@ body::before {
 
 .toast.show {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateX(-50%) translateY(0);
 }
 
 /* ========== Responsive ========== */
