@@ -29,91 +29,33 @@
     <!-- Today's Menu -->
     <div class="today-section">
         <div class="today-container">
-            <h2 class="section-title"><span class="title-icon">🍽️</span> 오늘의 메뉴</h2>
-            <div class="today-meals" id="todayMeals">
-                <div class="today-meal-card breakfast-card">
-                    <div class="meal-time-badge">조식</div>
-                    <div class="meal-time-icon">🌅</div>
-                    <div class="today-meal-content" id="todayBreakfast">
-                        <p class="no-meal">등록된 메뉴가 없어요</p>
-                    </div>
+            <div class="today-row">
+                <div class="today-label">
+                    <span class="today-label-icon">🍽️</span>
+                    <h2>오늘의<br>메뉴</h2>
                 </div>
-                <div class="today-meal-card lunch-card">
-                    <div class="meal-time-badge">중식</div>
-                    <div class="meal-time-icon">☀️</div>
-                    <div class="today-meal-content" id="todayLunch">
-                        <p class="no-meal">등록된 메뉴가 없어요</p>
+                <div class="today-meals" id="todayMeals">
+                    <div class="today-meal-card breakfast-card">
+                        <div class="meal-time-badge">조식</div>
+                        <div class="meal-time-icon">🌅</div>
+                        <div class="today-meal-content" id="todayBreakfast">
+                            <p class="no-meal">등록된 메뉴가 없어요</p>
+                        </div>
                     </div>
-                </div>
-                <div class="today-meal-card dinner-card">
-                    <div class="meal-time-badge">석식</div>
-                    <div class="meal-time-icon">🌙</div>
-                    <div class="today-meal-content" id="todayDinner">
-                        <p class="no-meal">등록된 메뉴가 없어요</p>
+                    <div class="today-meal-card lunch-card">
+                        <div class="meal-time-badge">중식</div>
+                        <div class="meal-time-icon">☀️</div>
+                        <div class="today-meal-content" id="todayLunch">
+                            <p class="no-meal">등록된 메뉴가 없어요</p>
+                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Upload Section -->
-    <div class="upload-section">
-        <div class="upload-container">
-            <h2 class="section-title"><span class="title-icon">📸</span> 식단표 등록</h2>
-            <p class="upload-desc">회사 식단표 사진을 올려주세요! AI가 자동으로 분석해드릴게요</p>
-            <!-- API Key Setting -->
-            <div class="api-key-section">
-                <button class="btn-api-key" id="apiKeyToggle">🔑 API 키 설정</button>
-                <div class="api-key-form" id="apiKeyForm" style="display:none;">
-                    <div class="api-key-input-wrap">
-                        <select id="apiProvider">
-                            <option value="openai">OpenAI (GPT-4o)</option>
-                            <option value="claude">Claude (Anthropic)</option>
-                        </select>
-                        <input type="password" id="apiKeyInput" placeholder="API 키를 입력하세요">
-                        <button class="btn-save-key" id="saveApiKey">저장</button>
+                    <div class="today-meal-card dinner-card">
+                        <div class="meal-time-badge">석식</div>
+                        <div class="meal-time-icon">🌙</div>
+                        <div class="today-meal-content" id="todayDinner">
+                            <p class="no-meal">등록된 메뉴가 없어요</p>
+                        </div>
                     </div>
-                    <p class="api-key-hint">API 키는 이 브라우저에만 저장돼요</p>
-                </div>
-            </div>
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📷</div>
-                <p>여기에 사진을 드래그하거나 클릭해서 업로드</p>
-                <input type="file" id="fileInput" accept="image/*" hidden>
-            </div>
-            <div class="upload-preview" id="uploadPreview" style="display:none;">
-                <img id="previewImg" src="" alt="미리보기">
-                <button class="btn-remove" id="removeImg">✕</button>
-            </div>
-            <!-- AI Analysis Loading -->
-            <div class="ai-loading" id="aiLoading" style="display:none;">
-                <div class="ai-loading-spinner"></div>
-                <p>AI가 식단표를 분석하고 있어요...</p>
-            </div>
-            <div class="manual-input-toggle">
-                <button class="btn-secondary" id="manualToggle">✏️ 직접 입력하기</button>
-            </div>
-            <div class="manual-input-area" id="manualArea" style="display:none;">
-                <div class="manual-form">
-                    <div class="form-row">
-                        <label>시작 날짜</label>
-                        <input type="date" id="weekStart">
-                    </div>
-                    <div class="week-input-grid" id="weekInputGrid"></div>
-                    <button class="btn-primary" id="saveManual">💾 저장하기</button>
-                </div>
-            </div>
-            <!-- Analysis result area -->
-            <div class="analysis-area" id="analysisArea" style="display:none;">
-                <h3>📋 분석 결과</h3>
-                <p class="analysis-desc">아래 내용을 확인하고 수정해주세요</p>
-                <div class="analysis-form">
-                    <div class="form-row">
-                        <label>시작 날짜</label>
-                        <input type="date" id="analysisWeekStart">
-                    </div>
-                    <div class="week-input-grid" id="analysisWeekGrid"></div>
-                    <button class="btn-primary" id="saveAnalysis">💾 저장하기</button>
                 </div>
             </div>
         </div>
@@ -122,10 +64,14 @@
     <!-- Calendar Section -->
     <div class="calendar-section">
         <div class="calendar-container">
-            <div class="calendar-header">
-                <button class="nav-btn" id="prevMonth">◀</button>
-                <h2 class="calendar-month" id="calendarMonth"></h2>
-                <button class="nav-btn" id="nextMonth">▶</button>
+            <div class="calendar-top-bar">
+                <button class="btn-register" id="openRegister">📸 식단 등록</button>
+                <div class="calendar-header">
+                    <button class="nav-btn" id="prevMonth">◀</button>
+                    <h2 class="calendar-month" id="calendarMonth"></h2>
+                    <button class="nav-btn" id="nextMonth">▶</button>
+                </div>
+                <button class="btn-api-key" id="apiKeyToggle">🔑 API 설정</button>
             </div>
             <div class="calendar-weekdays">
                 <div class="weekday sun">일</div>
@@ -137,6 +83,87 @@
                 <div class="weekday sat">토</div>
             </div>
             <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+
+    <!-- Register Modal (Popup) -->
+    <div class="modal-overlay" id="registerOverlay">
+        <div class="modal register-modal">
+            <button class="modal-close" id="registerClose">✕</button>
+            <h3 class="register-title">📸 식단표 등록</h3>
+            <p class="register-desc">기간을 선택하고 식단표 사진을 올려주세요</p>
+
+            <!-- Step 1: Period Selection -->
+            <div class="register-step">
+                <label class="register-label">기간을 선택하세요</label>
+                <div class="period-selector">
+                    <input type="date" id="periodStart" class="period-input">
+                    <span class="period-arrow">~</span>
+                    <input type="date" id="periodEnd" class="period-input" readonly>
+                </div>
+                <div class="period-chips" id="periodChips"></div>
+            </div>
+
+            <!-- Step 2: Photo Upload -->
+            <div class="register-step">
+                <label class="register-label">식단표 사진</label>
+                <div class="register-upload-area" id="uploadArea">
+                    <div class="upload-icon">📷</div>
+                    <p>사진을 드래그하거나 클릭해서 업로드</p>
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                </div>
+                <div class="upload-preview" id="uploadPreview" style="display:none;">
+                    <img id="previewImg" src="" alt="미리보기">
+                    <button class="btn-remove" id="removeImg">✕</button>
+                </div>
+            </div>
+
+            <!-- AI Loading -->
+            <div class="ai-loading" id="aiLoading" style="display:none;">
+                <div class="ai-loading-spinner"></div>
+                <p>AI가 식단표를 분석하고 있어요...</p>
+            </div>
+
+            <!-- Analysis Result -->
+            <div class="analysis-area" id="analysisArea" style="display:none;">
+                <label class="register-label">분석 결과 확인</label>
+                <div class="week-input-grid" id="analysisWeekGrid"></div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="register-actions">
+                <button class="btn-secondary" id="manualToggle">✏️ 직접 입력</button>
+                <button class="btn-primary" id="btnSubmitMeal">🍽️ 달력에 넣기</button>
+            </div>
+
+            <!-- Manual Input (hidden by default) -->
+            <div class="manual-input-area" id="manualArea" style="display:none;">
+                <div class="week-input-grid" id="weekInputGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div class="modal-overlay" id="apiKeyOverlay">
+        <div class="modal api-key-modal">
+            <button class="modal-close" id="apiKeyClose">✕</button>
+            <h3 class="register-title">🔑 API 키 설정</h3>
+            <p class="register-desc">AI 분석을 위한 API 키를 입력해주세요</p>
+            <div class="register-step">
+                <label class="register-label">AI 서비스</label>
+                <select id="apiProvider" class="period-input" style="width:100%;">
+                    <option value="openai">OpenAI (GPT-4o)</option>
+                    <option value="claude">Claude (Anthropic)</option>
+                </select>
+            </div>
+            <div class="register-step">
+                <label class="register-label">API 키</label>
+                <input type="password" id="apiKeyInput" placeholder="API 키를 입력하세요" class="period-input" style="width:100%;">
+            </div>
+            <p class="api-key-hint">API 키는 이 브라우저에만 저장돼요</p>
+            <div class="register-actions">
+                <button class="btn-primary" id="saveApiKey">💾 저장하기</button>
+            </div>
         </div>
     </div>
 

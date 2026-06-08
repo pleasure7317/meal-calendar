@@ -125,9 +125,9 @@ function updateTodayMenu() {
 
 // ==================== API Key Management ====================
 const apiKeyToggle = document.getElementById('apiKeyToggle');
-const apiKeyForm = document.getElementById('apiKeyForm');
 const apiKeyInput = document.getElementById('apiKeyInput');
 const apiProvider = document.getElementById('apiProvider');
+const apiKeyOverlay = document.getElementById('apiKeyOverlay');
 
 function loadApiConfig() {
     const key = localStorage.getItem(API_KEY_STORAGE) || '';
@@ -135,14 +135,22 @@ function loadApiConfig() {
     apiKeyInput.value = key;
     apiProvider.value = provider;
     if (key) {
-        apiKeyToggle.textContent = '🔑 API 키 설정됨';
+        apiKeyToggle.textContent = '🔑 설정됨';
         apiKeyToggle.classList.add('configured');
     }
 }
 loadApiConfig();
 
 apiKeyToggle.addEventListener('click', () => {
-    apiKeyForm.style.display = apiKeyForm.style.display === 'none' ? '' : 'none';
+    apiKeyOverlay.classList.add('show');
+});
+
+document.getElementById('apiKeyClose').addEventListener('click', () => {
+    apiKeyOverlay.classList.remove('show');
+});
+
+apiKeyOverlay.addEventListener('click', e => {
+    if (e.target === e.currentTarget) apiKeyOverlay.classList.remove('show');
 });
 
 document.getElementById('saveApiKey').addEventListener('click', () => {
@@ -154,11 +162,86 @@ document.getElementById('saveApiKey').addEventListener('click', () => {
     }
     localStorage.setItem(API_KEY_STORAGE, key);
     localStorage.setItem(API_PROVIDER_STORAGE, provider);
-    apiKeyToggle.textContent = '🔑 API 키 설정됨';
+    apiKeyToggle.textContent = '🔑 설정됨';
     apiKeyToggle.classList.add('configured');
-    apiKeyForm.style.display = 'none';
+    apiKeyOverlay.classList.remove('show');
     showToast('API 키가 저장되었어요!');
 });
+
+// ==================== Register Modal ====================
+const registerOverlay = document.getElementById('registerOverlay');
+
+document.getElementById('openRegister').addEventListener('click', () => {
+    resetRegisterModal();
+    registerOverlay.classList.add('show');
+});
+
+document.getElementById('registerClose').addEventListener('click', () => {
+    registerOverlay.classList.remove('show');
+});
+
+registerOverlay.addEventListener('click', e => {
+    if (e.target === e.currentTarget) registerOverlay.classList.remove('show');
+});
+
+function resetRegisterModal() {
+    document.getElementById('uploadPreview').style.display = 'none';
+    document.getElementById('uploadArea').style.display = '';
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('analysisArea').style.display = 'none';
+    document.getElementById('manualArea').style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    currentImageBase64 = null;
+
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+    document.getElementById('periodStart').value = getMealKey(monday);
+    updatePeriodEnd();
+    buildPeriodChips();
+}
+
+function updatePeriodEnd() {
+    const start = document.getElementById('periodStart').value;
+    if (start) {
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        document.getElementById('periodEnd').value = getMealKey(end);
+    }
+}
+
+document.getElementById('periodStart').addEventListener('change', () => {
+    updatePeriodEnd();
+});
+
+function buildPeriodChips() {
+    const chips = document.getElementById('periodChips');
+    const today = new Date();
+    const currentStart = document.getElementById('periodStart').value;
+    chips.innerHTML = '';
+
+    for (let i = -1; i <= 2; i++) {
+        const d = new Date(today);
+        const dayOfWeek = d.getDay();
+        d.setDate(d.getDate() - ((dayOfWeek + 6) % 7) + (i * 7));
+        const key = getMealKey(d);
+        const endD = new Date(d);
+        endD.setDate(endD.getDate() + 6);
+        const label = i === 0 ? '이번 주' : i === -1 ? '지난 주' : i === 1 ? '다음 주' : `${d.getMonth()+1}/${d.getDate()}~`;
+
+        const chip = document.createElement('button');
+        chip.className = `period-chip${key === currentStart ? ' active' : ''}`;
+        chip.textContent = label;
+        chip.addEventListener('click', () => {
+            document.getElementById('periodStart').value = key;
+            updatePeriodEnd();
+            chips.querySelectorAll('.period-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+        });
+        chips.appendChild(chip);
+    }
+}
 
 // ==================== AI Analysis ====================
 const AI_PROMPT = `이 이미지는 회사 식단표입니다. 이미지에서 각 요일별 조식, 중식, 석식 메뉴를 추출해주세요.
@@ -253,13 +336,8 @@ function fillAnalysisForm(parsed) {
     area.style.display = '';
 
     if (parsed.weekStart) {
-        document.getElementById('analysisWeekStart').value = parsed.weekStart;
-    } else {
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const monday = new Date(today);
-        monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
-        document.getElementById('analysisWeekStart').value = getMealKey(monday);
+        document.getElementById('periodStart').value = parsed.weekStart;
+        updatePeriodEnd();
     }
 
     buildWeekGrid('analysisWeekGrid');
@@ -314,18 +392,11 @@ function handleFile(file) {
         return;
     }
     const reader = new FileReader();
-    reader.onload = async e => {
+    reader.onload = e => {
         currentImageBase64 = e.target.result;
         previewImg.src = currentImageBase64;
         uploadPreview.style.display = '';
         uploadArea.style.display = 'none';
-
-        const apiKey = localStorage.getItem(API_KEY_STORAGE);
-        if (apiKey) {
-            await runAIAnalysis();
-        } else {
-            showAnalysisForm();
-        }
     };
     reader.readAsDataURL(file);
 }
@@ -349,62 +420,82 @@ async function runAIAnalysis() {
     } catch (err) {
         console.error('AI Analysis Error:', err);
         showToast(`분석 실패: ${err.message}`);
-        showAnalysisForm();
+        showManualForm();
     } finally {
         loading.style.display = 'none';
     }
 }
 
-function showAnalysisForm() {
-    const area = document.getElementById('analysisArea');
-    area.style.display = '';
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
-    document.getElementById('analysisWeekStart').value = getMealKey(monday);
-    buildWeekGrid('analysisWeekGrid');
-    showToast('사진을 확인하고 아래에 식단을 입력해주세요!');
+function showManualForm() {
+    const manualArea = document.getElementById('manualArea');
+    manualArea.style.display = '';
+    buildWeekGrid('weekInputGrid');
 }
 
-document.getElementById('saveAnalysis').addEventListener('click', () => {
-    saveWeekData('analysisWeekStart', 'analysisWeekGrid');
-    document.getElementById('analysisArea').style.display = 'none';
-    document.getElementById('uploadPreview').style.display = 'none';
-    document.getElementById('uploadArea').style.display = '';
-    fileInput.value = '';
-    showToast('식단이 저장되었어요! 🎉');
-});
-
 // ==================== Manual Input ====================
-const manualToggle = document.getElementById('manualToggle');
-const manualArea = document.getElementById('manualArea');
-
-manualToggle.addEventListener('click', () => {
+document.getElementById('manualToggle').addEventListener('click', () => {
+    const manualArea = document.getElementById('manualArea');
     const isHidden = manualArea.style.display === 'none';
     manualArea.style.display = isHidden ? '' : 'none';
-    if (isHidden) {
-        const today = new Date();
-        const dayOfWeek = today.getDay();
-        const monday = new Date(today);
-        monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
-        document.getElementById('weekStart').value = getMealKey(monday);
-        buildWeekGrid('weekInputGrid');
+    document.getElementById('analysisArea').style.display = 'none';
+    if (isHidden) buildWeekGrid('weekInputGrid');
+});
+
+// ==================== Submit (달력에 넣기) ====================
+document.getElementById('btnSubmitMeal').addEventListener('click', async () => {
+    const apiKey = localStorage.getItem(API_KEY_STORAGE);
+    const analysisArea = document.getElementById('analysisArea');
+    const manualArea = document.getElementById('manualArea');
+
+    if (analysisArea.style.display !== 'none') {
+        saveWeekFromGrid('analysisWeekGrid');
+    } else if (manualArea.style.display !== 'none') {
+        saveWeekFromGrid('weekInputGrid');
+    } else if (currentImageBase64 && apiKey) {
+        await runAIAnalysis();
+        return;
+    } else if (currentImageBase64 && !apiKey) {
+        showToast('API 키를 먼저 설정해주세요!');
+        return;
+    } else {
+        showToast('사진을 올리거나 직접 입력해주세요!');
+        return;
     }
 });
 
-document.getElementById('saveManual').addEventListener('click', () => {
-    saveWeekData('weekStart', 'weekInputGrid');
-    manualArea.style.display = 'none';
-    showToast('식단이 저장되었어요! 🎉');
-});
+function saveWeekFromGrid(gridId) {
+    const startDate = document.getElementById('periodStart').value;
+    if (!startDate) {
+        showToast('기간을 선택해주세요!');
+        return;
+    }
+    const data = loadMeals();
+    const grid = document.getElementById(gridId);
+    const textareas = grid.querySelectorAll('textarea');
+
+    textareas.forEach(ta => {
+        const dayOffset = parseInt(ta.dataset.day);
+        const type = ta.dataset.type;
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + dayOffset);
+        const key = getMealKey(date);
+
+        if (!data[key]) data[key] = {};
+        data[key][type] = ta.value.trim();
+    });
+
+    saveMeals(data);
+    updateTodayMenu();
+    renderCalendar();
+    registerOverlay.classList.remove('show');
+    showToast('식단이 달력에 저장되었어요! 🎉');
+}
 
 const dayNames = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
 
 function buildWeekGrid(gridId) {
     const grid = document.getElementById(gridId);
-    const startInput = gridId === 'analysisWeekGrid' ? 'analysisWeekStart' : 'weekStart';
-    const startDate = document.getElementById(startInput).value;
+    const startDate = document.getElementById('periodStart').value;
     const data = loadMeals();
 
     grid.innerHTML = '';
@@ -437,35 +528,6 @@ function buildWeekGrid(gridId) {
     }
 }
 
-function saveWeekData(startInputId, gridId) {
-    const startDate = document.getElementById(startInputId).value;
-    if (!startDate) {
-        showToast('시작 날짜를 선택해주세요!');
-        return;
-    }
-    const data = loadMeals();
-    const grid = document.getElementById(gridId);
-    const textareas = grid.querySelectorAll('textarea');
-
-    textareas.forEach(ta => {
-        const dayOffset = parseInt(ta.dataset.day);
-        const type = ta.dataset.type;
-        const date = new Date(startDate);
-        date.setDate(date.getDate() + dayOffset);
-        const key = getMealKey(date);
-
-        if (!data[key]) data[key] = {};
-        data[key][type] = ta.value.trim();
-    });
-
-    saveMeals(data);
-    updateTodayMenu();
-    renderCalendar();
-}
-
-// Update grid when date changes
-document.getElementById('weekStart').addEventListener('change', () => buildWeekGrid('weekInputGrid'));
-document.getElementById('analysisWeekStart').addEventListener('change', () => buildWeekGrid('analysisWeekGrid'));
 
 // ==================== Calendar ====================
 let currentYear, currentMonth;
