@@ -33,7 +33,7 @@ function refreshEmoji() {
                 callback: (icon) => {
                     // 받아둔 3D 이모지는 로컬 PNG, 나머지는 트위터 SVG로 폴백
                     if (FLUENT3D.has(icon)) return `emoji/${icon}.png`;
-                    return `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${icon}.svg`;
+                    return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/${icon}.svg`;
                 },
             });
         } catch (e) { /* noop */ }
