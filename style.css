@@ -55,10 +55,28 @@ body::before {
     pointer-events: none;
 }
 
+/* ========== 입사 D-day ========== */
+.dday-bar {
+    text-align: center;
+    padding: 8px 16px 0;
+}
+
+.dday-text {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 5px 16px;
+    border-radius: 20px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
 /* ========== Mood Section ========== */
 .mood-section {
     background: transparent;
-    padding: 10px 20px 30px;
+    padding: 10px 20px 14px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -274,7 +292,7 @@ body::before {
 
 /* ========== Today's Menu ========== */
 .today-section {
-    padding: 12px 20px 12px;
+    padding: 6px 20px 12px;
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -950,14 +968,24 @@ body::before {
 
 .day-meals {
     display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
+    flex-direction: column;
+    gap: 3px;
     margin-top: 4px;
 }
 
 .day-meal-icon {
-    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    color: var(--text);
+}
+
+.day-meal-icon .dm-emoji {
+    font-size: 0.9rem;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .day-meal-icon img.emoji {
@@ -965,6 +993,10 @@ body::before {
     width: 1em;
     vertical-align: middle;
     margin: 0;
+}
+
+.day-meal-icon .dm-label {
+    font-weight: 500;
 }
 
 /* ========== Modal ========== */
@@ -1425,7 +1457,12 @@ body::before {
     }
 
     .day-meal-icon {
-        font-size: 0.8rem;
+        font-size: 0.58rem;
+        gap: 2px;
+    }
+
+    .day-meal-icon .dm-emoji {
+        font-size: 0.72rem;
     }
 
     .day-number {

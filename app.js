@@ -695,13 +695,13 @@ function renderCalendar() {
         let mealsHtml = '';
         if (meals) {
             if (meals.breakfast) {
-                mealsHtml += `<span class="day-meal-icon breakfast" title="조식">🌅</span>`;
+                mealsHtml += `<span class="day-meal-icon breakfast"><span class="dm-emoji">🌅</span><span class="dm-label">조식</span></span>`;
             }
             if (meals.lunch) {
-                mealsHtml += `<span class="day-meal-icon lunch" title="중식">☀️</span>`;
+                mealsHtml += `<span class="day-meal-icon lunch"><span class="dm-emoji">☀️</span><span class="dm-label">중식</span></span>`;
             }
             if (meals.dinner) {
-                mealsHtml += `<span class="day-meal-icon dinner" title="석식">🌙</span>`;
+                mealsHtml += `<span class="day-meal-icon dinner"><span class="dm-emoji">🌙</span><span class="dm-label">석식</span></span>`;
             }
         }
 
@@ -865,6 +865,19 @@ function showToast(message) {
 }
 
 // ==================== Init ====================
+// ==================== 입사 D-day ====================
+function updateDday() {
+    const el = document.getElementById('ddayText');
+    if (!el) return;
+    // 입사일: 2026년 5월 7일 (당일을 D+1로 카운트)
+    const start = new Date(2026, 4, 7);
+    const now = new Date();
+    const s = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const n = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const days = Math.floor((n - s) / 86400000) + 1;
+    el.textContent = `💼 입사 D+${days}`;
+}
+
 // ==================== Weather ====================
 function weatherIcon(sky, pty) {
     const p = parseInt(pty, 10);
@@ -950,6 +963,7 @@ async function loadWeather() {
 }
 
 async function init() {
+    try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
     try { loadWeather(); } catch (e) { console.warn('날씨 로드 실패:', e); }
     try {
