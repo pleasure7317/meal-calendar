@@ -71,7 +71,40 @@ export default async function handler(req, res) {
             reh: byTime[t].REH ?? null,               // 습도
         }));
 
-        return res.status(200).json({ date: todayStr, location: '홍천', hours });
+        // 초단기실황(실제 관측값)으로 "현재" 날씨 보정
+        let current = null;
+        try {
+            // 매시각 발표, 약 40분 뒤 제공
+            let nHour = hour, nDate = todayStr;
+            if (min < 40) {
+                nHour = hour - 1;
+                if (nHour < 0) {
+                    nHour = 23;
+                    const y = new Date(now.getTime() - 24 * 3600 * 1000);
+                    nDate = `${y.getUTCFullYear()}${String(y.getUTCMonth() + 1).padStart(2, '0')}${String(y.getUTCDate()).padStart(2, '0')}`;
+                }
+            }
+            const ncstTime = String(nHour).padStart(2, '0') + '00';
+            const ncstUrl = `https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst`
+                + `?serviceKey=${encodeURIComponent(key)}`
+                + `&pageNo=1&numOfRows=100&dataType=JSON`
+                + `&base_date=${nDate}&base_time=${ncstTime}&nx=${nx}&ny=${ny}`;
+            const nr = await fetch(ncstUrl);
+            const nj = JSON.parse(await nr.text());
+            const nItems = nj?.response?.body?.items?.item || [];
+            const cur = {};
+            for (const it of nItems) cur[it.category] = it.obsrValue;
+            if (cur.T1H != null) {
+                current = {
+                    temp: cur.T1H,          // 실제 기온
+                    pty: cur.PTY ?? '0',    // 강수형태(실황)
+                    reh: cur.REH ?? null,   // 습도
+                    rn1: cur.RN1 ?? null,   // 1시간 강수량
+                };
+            }
+        } catch (e) { /* 실황 실패해도 예보는 표시 */ }
+
+        return res.status(200).json({ date: todayStr, location: '홍천', current, hours });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }

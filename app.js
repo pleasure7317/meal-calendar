@@ -908,10 +908,18 @@ async function loadWeather() {
             return;
         }
 
-        // 현재(가장 가까운 시간) 요약
-        const cur = upcoming[0];
-        if (nowEl && cur) {
-            nowEl.textContent = `${weatherIcon(cur.sky, cur.pty)} ${cur.temp}° ${weatherDesc(cur.sky, cur.pty)}`;
+        // 현재 요약: 실황(current)이 있으면 실제 관측값 사용, 없으면 가장 가까운 예보
+        const near = upcoming[0];
+        if (nowEl) {
+            if (data.current && data.current.temp != null) {
+                const c = data.current;
+                // 실황엔 하늘상태(SKY)가 없으니 가까운 예보의 sky로 아이콘 보완
+                const sky = near ? near.sky : null;
+                const pty = (c.pty && c.pty !== '0') ? c.pty : (near ? near.pty : '0');
+                nowEl.textContent = `지금 ${weatherIcon(sky, pty)} ${c.temp}° ${weatherDesc(sky, pty)}`;
+            } else if (near) {
+                nowEl.textContent = `${weatherIcon(near.sky, near.pty)} ${near.temp}° ${weatherDesc(near.sky, near.pty)}`;
+            }
         }
 
         wrap.innerHTML = upcoming.map(h => {
