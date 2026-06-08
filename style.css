@@ -628,6 +628,24 @@ body::before {
     font-weight: 500;
 }
 
+.cal-badge {
+    display: inline-block;
+    font-size: 0.68rem;
+    color: #e67e22;
+    font-weight: 600;
+    margin-left: 4px;
+}
+.cal-badge:not(:empty)::before {
+    content: '🔥 ';
+}
+
+.item-cal {
+    color: #e67e22;
+    font-size: 0.82em;
+    font-weight: 600;
+    margin-left: 3px;
+}
+
 .meal-input-wrap textarea {
     width: 100%;
     padding: 8px 10px;

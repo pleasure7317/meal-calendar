@@ -117,6 +117,26 @@ const calorieDB = {
     '토스트': 250, '빵': 200, '우유': 130, '주스': 100, '커피': 5, '수프': 150,
 };
 
+// 메뉴 한 개의 칼로리 추정 (숫자 반환, 없으면 null)
+function itemCalorie(item) {
+    if (!item) return null;
+    for (const [food, cal] of Object.entries(calorieDB)) {
+        if (item.includes(food)) return cal;
+    }
+    return null;
+}
+
+// 메뉴 텍스트 뒤에 (NNNkcal) 붙여서 반환
+function withCalorie(item) {
+    // AI가 이미 (NNNkcal)을 붙여준 경우엔 그 부분만 스타일링
+    const m = item.match(/^(.*?)\s*\((\d+)\s*kcal\)\s*$/i);
+    if (m) {
+        return `${m[1]} <span class="item-cal">(${m[2]}kcal)</span>`;
+    }
+    const cal = itemCalorie(item);
+    return cal ? `${item} <span class="item-cal">(${cal}kcal)</span>` : item;
+}
+
 function estimateCalories(menuText) {
     if (!menuText) return null;
     let total = 0;
@@ -192,7 +212,7 @@ function updateTodayMenu() {
         if (today && today[key]) {
             const items = today[key].split('\n').filter(Boolean);
             container.innerHTML = items.map(item =>
-                `<div class="menu-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">${item}</div>`
+                `<div class="menu-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">${withCalorie(item)}</div>`
             ).join('');
         } else {
             container.innerHTML = '<p class="no-meal">등록된 메뉴가 없어요</p>';
@@ -488,19 +508,26 @@ function buildWeekGrid(gridId) {
             <h4>${dayNames[i]} (${date.getMonth() + 1}/${date.getDate()})</h4>
             <div class="meal-inputs">
                 <div class="meal-input-wrap">
-                    <label>🌅 조식</label>
+                    <label>🌅 조식 <span class="cal-badge" data-cal="breakfast">${estimateCalories(existing.breakfast) || ''}</span></label>
                     <textarea data-day="${i}" data-type="breakfast" placeholder="메뉴를 입력해주세요&#10;(줄바꿈으로 구분)">${existing.breakfast || ''}</textarea>
                 </div>
                 <div class="meal-input-wrap">
-                    <label>☀️ 중식</label>
+                    <label>☀️ 중식 <span class="cal-badge" data-cal="lunch">${estimateCalories(existing.lunch) || ''}</span></label>
                     <textarea data-day="${i}" data-type="lunch" placeholder="메뉴를 입력해주세요&#10;(줄바꿈으로 구분)">${existing.lunch || ''}</textarea>
                 </div>
                 <div class="meal-input-wrap">
-                    <label>🌙 석식</label>
+                    <label>🌙 석식 <span class="cal-badge" data-cal="dinner">${estimateCalories(existing.dinner) || ''}</span></label>
                     <textarea data-day="${i}" data-type="dinner" placeholder="메뉴를 입력해주세요&#10;(줄바꿈으로 구분)">${existing.dinner || ''}</textarea>
                 </div>
             </div>
         `;
+        // 입력하면 칼로리 실시간 표시
+        group.querySelectorAll('textarea').forEach(ta => {
+            const badge = group.querySelector(`.cal-badge[data-cal="${ta.dataset.type}"]`);
+            ta.addEventListener('input', () => {
+                badge.textContent = estimateCalories(ta.value) || '';
+            });
+        });
         grid.appendChild(group);
     }
 }
@@ -622,7 +649,7 @@ function updateModalContent() {
         const items = meals[currentTab].split('\n').filter(Boolean);
         list.innerHTML = items.map(item =>
             `<div class="modal-meal-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">
-                <span>${item}</span>
+                <span>${withCalorie(item)}</span>
                 <span class="search-icon">🔍</span>
             </div>`
         ).join('');
