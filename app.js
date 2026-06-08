@@ -1,10 +1,10 @@
 // ==================== Supabase Init ====================
 const SUPABASE_URL = 'https://kgwlzvmnvlzrpjatnfmt.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_rLsCWwHlvRDFLHa7xnV9ZQ_9HA834a-';
-let supabase = null;
+let sb = null;
 try {
     if (window.supabase && window.supabase.createClient) {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } else {
         console.warn('Supabase 라이브러리가 로드되지 않았습니다. DB 없이 동작합니다.');
     }
@@ -20,7 +20,7 @@ let cacheLoaded = false;
 
 async function loadMealsFromDB() {
     try {
-        const { data, error } = await supabase.from('meals').select('*');
+        const { data, error } = await sb.from('meals').select('*');
         if (error) throw error;
         const result = {};
         for (const row of data) {
@@ -45,7 +45,7 @@ function loadMeals() {
 
 async function saveMealToDB(dateKey, meals) {
     try {
-        const { error } = await supabase.from('meals').upsert({
+        const { error } = await sb.from('meals').upsert({
             date_key: dateKey,
             breakfast: meals.breakfast || '',
             lunch: meals.lunch || '',
@@ -71,7 +71,7 @@ async function saveMeals(data) {
 
 async function saveMoodToDB(dateKey, mood) {
     try {
-        await supabase.from('moods').upsert({
+        await sb.from('moods').upsert({
             date_key: dateKey,
             mood: mood,
         }, { onConflict: 'date_key' });
@@ -82,7 +82,7 @@ async function saveMoodToDB(dateKey, mood) {
 
 async function loadMoodFromDB(dateKey) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await sb
             .from('moods')
             .select('mood')
             .eq('date_key', dateKey)
