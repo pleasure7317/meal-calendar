@@ -9,13 +9,17 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { image } = req.body;
+        const { image, weekStart } = req.body;
         if (!image) {
             return res.status(400).json({ error: 'No image provided' });
         }
 
-        const prompt = `이 이미지는 회사 식단표입니다. 이미지에서 각 요일별 조식, 중식, 석식 메뉴를 추출해주세요.
+        const weekStartLine = weekStart
+            ? `\n중요: 이 식단표가 속한 주의 월요일 날짜는 ${weekStart} 입니다. weekStart는 반드시 "${weekStart}"로 설정하세요. 이미지에 다른 날짜가 보여도 이 값을 우선합니다.\n`
+            : '';
 
+        const prompt = `이 이미지는 회사 식단표입니다. 이미지에서 각 요일별 조식, 중식, 석식 메뉴를 추출해주세요.
+${weekStartLine}
 반드시 아래 JSON 형식으로만 응답해주세요. 다른 텍스트 없이 JSON만 반환해주세요:
 {
   "weekStart": "YYYY-MM-DD",
