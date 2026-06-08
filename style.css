@@ -76,7 +76,7 @@ body::before {
 /* ========== Mood Section ========== */
 .mood-section {
     background: transparent;
-    padding: 10px 20px 14px;
+    padding: 10px 20px 16px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -138,12 +138,12 @@ body::before {
     -webkit-overflow-scrolling: touch;
 }
 
-.weather-hours::-webkit-scrollbar {
-    height: 5px;
+.weather-hours {
+    scrollbar-width: none;            /* Firefox */
+    -ms-overflow-style: none;         /* IE/Edge */
 }
-.weather-hours::-webkit-scrollbar-thumb {
-    background: rgba(25,118,210,0.3);
-    border-radius: 3px;
+.weather-hours::-webkit-scrollbar {
+    display: none;                    /* Chrome/Safari */
 }
 
 .weather-card {
@@ -292,7 +292,7 @@ body::before {
 
 /* ========== Today's Menu ========== */
 .today-section {
-    padding: 6px 20px 12px;
+    padding: 8px 20px 12px;
     max-width: 1100px;
     margin: 0 auto;
 }
