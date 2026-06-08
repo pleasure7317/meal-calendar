@@ -1296,11 +1296,15 @@ function saveEnglishLog(log) {
     localStorage.setItem('englishLog', JSON.stringify(log));
 }
 
-// 다음에 공개할 표현 번호 (지금까지 본 것 다음 순서)
+// 다음에 공개할 표현 번호 (아직 안 본 표현 중에서 랜덤, 다 봤으면 전체 랜덤)
 function nextEnglishIdx(log) {
-    if (!log.length) return 0;
-    const maxIdx = Math.max(...log.map(e => e.idx));
-    return (maxIdx + 1) % ENGLISH_PHRASES.length;
+    const used = new Set(log.map(e => e.idx));
+    const pool = [];
+    for (let i = 0; i < ENGLISH_PHRASES.length; i++) {
+        if (!used.has(i)) pool.push(i);
+    }
+    const candidates = pool.length ? pool : ENGLISH_PHRASES.map((_, i) => i);
+    return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
 // 새 날이 되면 그날의 표현 하나를 자동으로 추가
