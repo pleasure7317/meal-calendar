@@ -720,7 +720,7 @@ let currentModalDate = null;
 let currentModalKey = null;
 let currentTab = 'breakfast';
 
-function openDayModal(date, key) {
+function openDayModal(date, key, tab = 'breakfast') {
     currentModalDate = date;
     currentModalKey = key;
     const modal = document.getElementById('modalOverlay');
@@ -728,12 +728,24 @@ function openDayModal(date, key) {
     document.getElementById('modalDate').textContent = dateStr;
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === 'breakfast');
+        btn.classList.toggle('active', btn.dataset.tab === tab);
     });
-    currentTab = 'breakfast';
+    currentTab = tab;
     updateModalContent();
     modal.classList.add('show');
 }
+
+// 오늘의 메뉴 카드(조식/중식/석식) 클릭 → 해당 탭으로 상세 팝업
+[['breakfast-card', 'breakfast'], ['lunch-card', 'lunch'], ['dinner-card', 'dinner']].forEach(([cls, tab]) => {
+    const card = document.querySelector('.' + cls);
+    if (card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+            const today = new Date();
+            openDayModal(today, getMealKey(today), tab);
+        });
+    }
+});
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {

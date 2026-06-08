@@ -1426,6 +1426,7 @@ body::before {
     }
 
     .reset-modal,
+    .register-modal,
     #mealModal {
         border-radius: var(--radius);
     }
