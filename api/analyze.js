@@ -116,6 +116,10 @@ ${MENU_GLOSSARY.join(', ')}`;
             // 동의어로 바꿔버리는 케이스 교정
             '비엔나채소볶음': '비엔나야채볶음',
             '소시지채소볶음': '소시지야채볶음',
+            // 햄마늘쫑볶음 오인식 교정 (감자/종/쪽 등으로 잘못 읽는 경우)
+            '햄감자볶음': '햄마늘쫑볶음',
+            '햄마늘종볶음': '햄마늘쫑볶음',
+            '마늘종볶음': '마늘쫑볶음',
         };
         for (const [wrong, right] of Object.entries(CORRECTIONS)) {
             if (result.includes(wrong)) result = result.split(wrong).join(right);
