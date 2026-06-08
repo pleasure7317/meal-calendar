@@ -1515,34 +1515,83 @@ function scrapEnglish() {
     updateScrapButton();
 }
 
-// 영어 발음 듣기 (브라우저 내장 음성합성)
-// 브라우저 기본 음성 (폴백): 자연스러운 영어 음성 우선 선택
+// 브라우저 내장 음성: 자연스러운 영어 음성 우선 선택
 function browserSpeak(text) {
     try {
-        if (!('speechSynthesis' in window)) return;
+        if (!('speechSynthesis' in window)) return false;
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'en-US';
         u.rate = 0.95;
         const voices = window.speechSynthesis.getVoices() || [];
-        // 자연스러운 음성 우선순위 (기기에 있는 것 중에서)
         const prefer = ['Google US English', 'Samantha', 'Aria', 'Jenny', 'Ava', 'Allison', 'Microsoft Aria', 'Microsoft Jenny'];
         let v = voices.find(x => prefer.some(p => x.name.includes(p)) && /en[-_]?US/i.test(x.lang));
         if (!v) v = voices.find(x => /en[-_]?US/i.test(x.lang));
         if (v) u.voice = v;
         window.speechSynthesis.speak(u);
-    } catch (e) { /* noop */ }
+        return true;
+    } catch (e) { return false; }
 }
 
-// 발음 듣기: 브라우저 기본 음성 사용
-function speakEnglish(text) {
-    if (!text) return;
-    browserSpeak(text);
+// 인앱 브라우저(카카오톡 등) 감지 — 여기선 브라우저 음성이 안 돼서 서버 음성 사용
+function isInAppBrowser() {
+    const ua = navigator.userAgent || '';
+    return /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps|everytimeApp/i.test(ua);
 }
-// 음성 목록은 비동기로 로드되므로 미리 한 번 트리거
+
+// 서버(OpenAI) 음성 재생
+let _ttsAudio = null;
+async function serverSpeak(text) {
+    try {
+        if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
+        const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        if (!res.ok) return false;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        _ttsAudio = new Audio(url);
+        _ttsAudio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
+        await _ttsAudio.play();
+        return true;
+    } catch (e) { return false; }
+}
+
+// 발음 듣기: 인앱 브라우저는 서버 음성, 그 외는 브라우저 음성(+실패 시 서버 폴백)
+async function speakEnglish(text) {
+    if (!text) return;
+    if (isInAppBrowser()) {
+        if (await serverSpeak(text)) return;
+        browserSpeak(text);
+        return;
+    }
+    if (!browserSpeak(text)) {
+        await serverSpeak(text);
+    }
+}
+
+// 음성 엔진 미리 워밍업 → 사파리 등에서 첫 재생 지연 줄임
+let _ttsWarmed = false;
+function warmUpTTS() {
+    if (_ttsWarmed) return;
+    _ttsWarmed = true;
+    try {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.getVoices();
+            const u = new SpeechSynthesisUtterance(' ');
+            u.volume = 0;
+            window.speechSynthesis.speak(u);
+        }
+    } catch (e) { /* noop */ }
+}
 if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
+['touchstart', 'click'].forEach(ev =>
+    document.addEventListener(ev, warmUpTTS, { once: true, passive: true })
+);
 
 // 표현 노트에서 한 항목 삭제
 function deleteEnglishItem(pos) {
