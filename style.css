@@ -1314,11 +1314,6 @@ body::before {
     background: #fafafa;
 }
 
-.modal-meal-item:hover {
-    background: var(--primary-light);
-    transform: translateX(4px);
-}
-
 .modal-meal-item::before {
     content: '•';
     color: var(--primary);
@@ -1328,12 +1323,19 @@ body::before {
 .modal-meal-item .search-icon {
     margin-left: auto;
     font-size: 0.8rem;
-    opacity: 0;
+    opacity: 0.5;
     transition: opacity 0.2s;
 }
 
-.modal-meal-item:hover .search-icon {
-    opacity: 1;
+/* hover 효과는 마우스 기기에서만 (터치에서 두 번 탭 방지) */
+@media (hover: hover) and (pointer: fine) {
+    .modal-meal-item:hover {
+        background: var(--primary-light);
+        transform: translateX(4px);
+    }
+    .modal-meal-item:hover .search-icon {
+        opacity: 1;
+    }
 }
 
 .no-meal-modal {
