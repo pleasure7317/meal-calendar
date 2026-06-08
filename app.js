@@ -1533,17 +1533,20 @@ function browserSpeak(text) {
     } catch (e) { return false; }
 }
 
-// 인앱 브라우저(카카오톡 등) 감지 — 여기선 브라우저 음성이 안 돼서 서버 음성 사용
-function isInAppBrowser() {
-    const ua = navigator.userAgent || '';
-    return /KAKAOTALK|Instagram|FBAN|FBAV|FB_IAB|Line\/|NAVER|DaumApps|everytimeApp/i.test(ua);
+// 재사용 오디오 엘리먼트 (iOS 자동재생 차단 회피: 첫 제스처에서 미리 unlock)
+let _ttsAudio = null;
+let _ttsAudioUnlocked = false;
+function ttsAudioEl() {
+    if (!_ttsAudio) {
+        _ttsAudio = new Audio();
+        _ttsAudio.preload = 'auto';
+    }
+    return _ttsAudio;
 }
 
 // 서버(OpenAI) 음성 재생
-let _ttsAudio = null;
 async function serverSpeak(text) {
     try {
-        if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
         const res = await fetch('/api/tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1552,31 +1555,37 @@ async function serverSpeak(text) {
         if (!res.ok) return false;
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-        _ttsAudio = new Audio(url);
-        _ttsAudio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
-        await _ttsAudio.play();
+        const a = ttsAudioEl();
+        a.src = url;
+        a.onended = () => { URL.revokeObjectURL(url); };
+        await a.play();
         return true;
     } catch (e) { return false; }
 }
 
-// 발음 듣기: 인앱 브라우저는 서버 음성, 그 외는 브라우저 음성(+실패 시 서버 폴백)
+// 발음 듣기: 항상 OpenAI 자연 음성, 실패 시 브라우저 음성 폴백
 async function speakEnglish(text) {
     if (!text) return;
-    if (isInAppBrowser()) {
-        if (await serverSpeak(text)) return;
-        browserSpeak(text);
-        return;
-    }
-    if (!browserSpeak(text)) {
-        await serverSpeak(text);
-    }
+    if (await serverSpeak(text)) return;
+    browserSpeak(text);
 }
 
-// 음성 엔진 미리 워밍업 → 사파리 등에서 첫 재생 지연 줄임
+// 첫 사용자 제스처에서 오디오/음성 엔진을 미리 풀어둠 (iOS 차단·사파리 지연 완화)
 let _ttsWarmed = false;
 function warmUpTTS() {
     if (_ttsWarmed) return;
     _ttsWarmed = true;
+    // 무음 오디오로 audio 엘리먼트 unlock
+    try {
+        if (!_ttsAudioUnlocked) {
+            const a = ttsAudioEl();
+            a.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+            const p = a.play();
+            if (p && p.then) p.then(() => { a.pause(); a.currentTime = 0; }).catch(() => {});
+            _ttsAudioUnlocked = true;
+        }
+    } catch (e) { /* noop */ }
+    // 브라우저 음성 엔진도 워밍업 (폴백용)
     try {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.getVoices();

@@ -20,10 +20,10 @@ export default async function handler(req, res) {
             },
             body: JSON.stringify({
                 model: 'tts-1',
-                voice: 'nova',          // 따뜻하고 자연스러운 여성 음성
+                voice: 'nova',          // 학습용: 또렷하고 차분한 여성 음성
                 input: text.slice(0, 300),
                 response_format: 'mp3',
-                speed: 0.95,
+                speed: 0.9,             // 학습하기 좋게 살짝 천천히
             }),
         });
         if (!r.ok) {
