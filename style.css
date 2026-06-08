@@ -57,8 +57,8 @@ body::before {
 
 /* ========== Mood Section ========== */
 .mood-section {
-    background: linear-gradient(135deg, rgba(252,228,236,0.82) 0%, rgba(243,229,245,0.82) 50%, rgba(232,234,246,0.82) 100%);
-    padding: 40px 20px 30px;
+    background: linear-gradient(135deg, rgba(252,228,236,0.6) 0%, rgba(243,229,245,0.6) 50%, rgba(232,234,246,0.6) 100%);
+    padding: 35px 20px 30px;
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -89,7 +89,7 @@ body::before {
 
 /* ===== Weather Section ===== */
 .weather-section {
-    background: linear-gradient(135deg, rgba(187,222,251,0.85) 0%, rgba(225,245,254,0.85) 100%);
+    background: linear-gradient(135deg, rgba(187,222,251,0.6) 0%, rgba(225,245,254,0.6) 100%);
     padding: 18px 16px;
 }
 

@@ -940,6 +940,8 @@ async function loadWeather() {
 }
 
 async function init() {
+    // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
+    try { loadWeather(); } catch (e) { console.warn('날씨 로드 실패:', e); }
     try {
         await loadMealsFromDB();
     } catch (e) {
@@ -959,11 +961,6 @@ async function init() {
         await restoreMood();
     } catch (e) {
         console.warn('기분 로드 실패:', e);
-    }
-    try {
-        loadWeather();
-    } catch (e) {
-        console.warn('날씨 로드 실패:', e);
     }
 }
 
