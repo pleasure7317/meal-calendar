@@ -57,7 +57,7 @@ body::before {
 
 /* ========== Mood Section ========== */
 .mood-section {
-    background: linear-gradient(135deg, rgba(252,228,236,0.6) 0%, rgba(243,229,245,0.6) 50%, rgba(232,234,246,0.6) 100%);
+    background: transparent;
     padding: 35px 20px 30px;
     text-align: center;
     position: relative;
@@ -89,7 +89,7 @@ body::before {
 
 /* ===== Weather Section ===== */
 .weather-section {
-    background: linear-gradient(135deg, rgba(187,222,251,0.6) 0%, rgba(225,245,254,0.6) 100%);
+    background: transparent;
     padding: 18px 16px;
 }
 

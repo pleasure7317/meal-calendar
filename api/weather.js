@@ -5,8 +5,8 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'DATA_GO_KR_KEY not configured' });
     }
 
-    // 홍천 동네예보 격자 좌표 (네이버 표시값과 일치하는 격자)
-    const nx = 73, ny = 133;
+    // 홍천읍 동네예보 격자 좌표 (위경도→기상청 격자 변환으로 확정)
+    const nx = 75, ny = 130;
     const BASE = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0';
 
     const fmtDate = (d) =>
