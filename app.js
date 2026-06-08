@@ -16,7 +16,7 @@ try {
 // 로컬에 받아둔 Microsoft Fluent 3D 이모지 목록 (codepoint 키)
 const FLUENT3D = new Set([
     '1f305','1f319','1f324','1f326','1f327','1f328','1f338','1f35a','1f373','1f37d',
-    '1f389','1f3ac','1f3e8','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4d2',
+    '1f389','1f3ac','1f3e8','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4cc','1f4d2',
     '1f4d6','1f4d7','1f4f7','1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624',
     '1f50a','1f62e-200d-1f4a8','1f634','1f912','1f917','1f929','1f963','1f969','1f970',
     '1f97a','1f9c8','2600','2601','26a0','26c5','270f','2728','2744'
@@ -1364,75 +1364,65 @@ const ENGLISH_PHRASES = [
 ];
 const PHRASE_CATS = ["인사·응대","체크인","체크인","예약","체크인","체크인","체크인","인사·응대","객실·부대시설","인사·응대","컴플레인·사과","인사·응대","체크인","객실·부대시설","체크아웃·결제","하우스키핑","객실·부대시설","멤버십·업셀","예약","교통","인사·응대","체크인","예약","객실·부대시설","체크인","체크인","하우스키핑","체크아웃·결제","체크아웃·결제","체크아웃·결제","객실·부대시설","컴플레인·사과","작별","체크아웃·결제","객실·부대시설","멤버십·업셀","룸서비스·식음료","인사·응대","컨시어지·관광","작별","컨시어지·관광","하우스키핑","하우스키핑","인사·응대","예약","체크아웃·결제","객실·부대시설","객실·부대시설","하우스키핑","예약","스몰토크·날씨","교통","멤버십·업셀","체크아웃·결제","컨시어지·관광","룸서비스·식음료","예약","작별","안전·긴급","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","예약","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","체크인","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","객실·부대시설","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","하우스키핑","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","룸서비스·식음료","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컨시어지·관광","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","컴플레인·사과","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","전화·메시지","교통","교통","교통","교통","교통","교통","교통","교통","교통","교통","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","체크아웃·결제","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","멤버십·업셀","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","안전·긴급","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","작별","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","스몰토크·날씨","비즈니스","비즈니스","비즈니스","비즈니스","비즈니스","비즈니스","비즈니스","가족·아이","가족·아이","가족·아이","가족·아이","가족·아이","기기 도움","기기 도움","기기 도움","기기 도움","기기 도움","기기 도움","기기 도움","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대","인사·응대"];
 
-// 시작일(이 날부터 하루에 하나씩 자동으로 쌓임)
-const ENGLISH_START = new Date(2026, 5, 8); // 2026-06-08
-
-function englishDayIndex() {
-    const now = new Date();
-    const s = new Date(ENGLISH_START.getFullYear(), ENGLISH_START.getMonth(), ENGLISH_START.getDate());
-    const n = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    return Math.max(0, Math.floor((n - s) / 86400000));
-}
-
-// 오늘이 시작일 기준 며칠째인지 (Day 번호)
-function todayDayNum() {
-    return englishDayIndex() + 1;
-}
-
-// 공부 기록: [{ idx: 표현번호, day: Day번호 }, ...] (공부한 순서대로)
-function loadEnglishLog() {
-    try {
-        const arr = JSON.parse(localStorage.getItem('englishLog') || '[]');
-        return Array.isArray(arr) ? arr : [];
-    } catch (e) { return []; }
-}
-function saveEnglishLog(log) {
-    localStorage.setItem('englishLog', JSON.stringify(log));
-}
-
-// 다음에 공개할 표현 번호 (아직 안 본 표현 중에서 랜덤, 다 봤으면 전체 랜덤)
-function nextEnglishIdx(log) {
-    const used = new Set(log.map(e => e.idx));
+// ===== 오늘 표시할 표현 (매일 자동 변경 + "한 개 더") =====
+function randomEnglishIdx(exclude) {
+    const ex = exclude instanceof Set ? exclude : new Set(exclude || []);
     const pool = [];
-    for (let i = 0; i < ENGLISH_PHRASES.length; i++) {
-        if (!used.has(i)) pool.push(i);
-    }
-    const candidates = pool.length ? pool : ENGLISH_PHRASES.map((_, i) => i);
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    for (let i = 0; i < ENGLISH_PHRASES.length; i++) if (!ex.has(i)) pool.push(i);
+    const cand = pool.length ? pool : ENGLISH_PHRASES.map((_, i) => i);
+    return cand[Math.floor(Math.random() * cand.length)];
 }
 
-// 새 날이 되면 그날의 표현 하나를 자동으로 추가
-function ensureEnglishToday() {
-    const log = loadEnglishLog();
-    const today = todayDayNum();
-    if (log.length === 0 || log[log.length - 1].day < today) {
-        log.push({ idx: nextEnglishIdx(log), day: today });
-        saveEnglishLog(log);
+// 현재 표시 중인 표현 (날짜가 바뀌면 자동으로 새 표현)
+function getCurrentEnglish() {
+    let cur = null;
+    try { cur = JSON.parse(localStorage.getItem('englishCurrent') || 'null'); } catch (e) { /* noop */ }
+    const today = getMealKey(new Date());
+    if (!cur || typeof cur.idx !== 'number' || cur.date !== today) {
+        cur = { idx: randomEnglishIdx(), date: today };
+        localStorage.setItem('englishCurrent', JSON.stringify(cur));
     }
-    return log;
+    return cur;
 }
 
 function updateEnglishPhrase() {
     const enEl = document.getElementById('englishEn');
     const koEl = document.getElementById('englishKo');
     if (!enEl || !koEl) return;
-    const log = ensureEnglishToday();
-    const last = log[log.length - 1];
-    const p = ENGLISH_PHRASES[last.idx];
+    const cur = getCurrentEnglish();
+    const p = ENGLISH_PHRASES[cur.idx];
     enEl.textContent = `"${p.en}"`;
     koEl.textContent = p.ko;
-    enEl.dataset.idx = last.idx;
+    enEl.dataset.idx = cur.idx;
     const catEl = document.getElementById('englishCat');
-    if (catEl) catEl.textContent = `(${PHRASE_CATS[last.idx] || ''})`;
+    if (catEl) catEl.textContent = `(${PHRASE_CATS[cur.idx] || ''})`;
 }
 
-// "한 개 더 공부" → 다음 표현을 오늘 Day에 추가
+// "한 개 더" → 다른 표현으로 바꿈 (노트에는 안 들어감, 스크랩해야 들어감)
 function studyMoreEnglish() {
-    const log = ensureEnglishToday();
-    log.push({ idx: nextEnglishIdx(log), day: todayDayNum() });
-    saveEnglishLog(log);
+    const cur = getCurrentEnglish();
+    const next = randomEnglishIdx(new Set([cur.idx]));
+    localStorage.setItem('englishCurrent', JSON.stringify({ idx: next, date: getMealKey(new Date()) }));
     updateEnglishPhrase();
-    showToast('새 표현을 가져왔어요! 표현 노트에 저장됐어요 ✏️');
+}
+
+// ===== 스크랩(표현 노트) =====
+function loadScraps() {
+    try { const a = JSON.parse(localStorage.getItem('englishScraps') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function saveScraps(s) { localStorage.setItem('englishScraps', JSON.stringify(s)); }
+
+// 현재 표현을 표현 노트에 스크랩
+function scrapEnglish() {
+    const cur = getCurrentEnglish();
+    const scraps = loadScraps();
+    if (scraps.some(s => s.idx === cur.idx)) {
+        showToast('이미 스크랩한 표현이에요 📌');
+        return;
+    }
+    scraps.push({ idx: cur.idx, date: getMealKey(new Date()) });
+    saveScraps(scraps);
+    showToast('표현 노트에 스크랩했어요! 📌');
 }
 
 // 영어 발음 듣기 (브라우저 내장 음성합성)
@@ -1466,28 +1456,33 @@ if ('speechSynthesis' in window) {
 
 // 표현 노트에서 한 항목 삭제
 function deleteEnglishItem(pos) {
-    const log = loadEnglishLog();
-    if (pos < 0 || pos >= log.length) return;
-    log.splice(pos, 1);
-    saveEnglishLog(log);
+    const scraps = loadScraps();
+    if (pos < 0 || pos >= scraps.length) return;
+    scraps.splice(pos, 1);
+    saveScraps(scraps);
     renderEnglishNote();
-    updateEnglishPhrase();
 }
 
 function renderEnglishNote() {
     const listEl = document.getElementById('englishNoteList');
     if (!listEl) return;
-    const log = ensureEnglishToday();
-    const today = todayDayNum();
+    const scraps = loadScraps();
+    // 스크랩한 날짜를 오름차순으로 정렬해 Day 번호 부여
+    // (처음 스크랩한 날=Day1, 다음에 스크랩한 날=Day2, 같은 날 스크랩은 같은 Day)
+    const dates = [...new Set(scraps.map(s => s.date))].sort();
+    const dayOf = {};
+    dates.forEach((d, i) => { dayOf[d] = i + 1; });
+    const today = getMealKey(new Date());
+
     let html = '';
-    for (let pos = log.length - 1; pos >= 0; pos--) {
-        const e = log[pos];
+    for (let pos = scraps.length - 1; pos >= 0; pos--) { // 최신 스크랩이 위
+        const e = scraps[pos];
         const p = ENGLISH_PHRASES[e.idx];
-        const isToday = e.day === today;
+        const isToday = e.date === today;
         html += `
             <div class="english-note-item${isToday ? ' today' : ''}">
                 <div class="note-top">
-                    <span class="note-day">Day ${e.day} (${PHRASE_CATS[e.idx] || ''})${isToday ? ' · 오늘' : ''}</span>
+                    <span class="note-day">Day ${dayOf[e.date]} (${PHRASE_CATS[e.idx] || ''})${isToday ? ' · 오늘' : ''}</span>
                     <div class="note-actions">
                         <button class="note-speak" data-text="${p.en.replace(/"/g, '&quot;')}" title="발음 듣기">🔊</button>
                         <button class="note-del" data-pos="${pos}" title="삭제">🗑️</button>
@@ -1497,7 +1492,7 @@ function renderEnglishNote() {
                 <p class="note-ko">${p.ko}</p>
             </div>`;
     }
-    listEl.innerHTML = html || '<p class="weather-loading">아직 모은 표현이 없어요</p>';
+    listEl.innerHTML = html || '<p class="weather-loading">아직 스크랩한 표현이 없어요.<br>📌 스크랩 버튼으로 마음에 드는 표현을 모아보세요!</p>';
 
     listEl.querySelectorAll('.note-speak').forEach(btn => {
         btn.addEventListener('click', () => speakEnglish(btn.dataset.text));
@@ -1622,6 +1617,8 @@ async function loadWeather() {
     const close = document.getElementById('englishClose');
     const more = document.getElementById('studyMoreBtn');
     const speak = document.getElementById('englishSpeak');
+    const scrap = document.getElementById('scrapBtn');
+    if (scrap) scrap.addEventListener('click', scrapEnglish);
     if (more) more.addEventListener('click', studyMoreEnglish);
     if (speak) speak.addEventListener('click', () => {
         const en = document.getElementById('englishEn');
