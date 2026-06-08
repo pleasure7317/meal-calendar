@@ -472,10 +472,35 @@ function setAILoadingText(t) {
     if (el) el.textContent = t;
 }
 
+// ===== 화면 꺼짐 방지 (Screen Wake Lock) =====
+let _wakeLock = null;
+let _wakeWanted = false;
+async function acquireWakeLock() {
+    _wakeWanted = true;
+    try {
+        if ('wakeLock' in navigator) {
+            _wakeLock = await navigator.wakeLock.request('screen');
+            _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+        }
+    } catch (e) { /* 지원 안 하거나 거부됨 → 무시 */ }
+}
+async function releaseWakeLock() {
+    _wakeWanted = false;
+    try { if (_wakeLock) await _wakeLock.release(); } catch (e) { /* noop */ }
+    _wakeLock = null;
+}
+// 분석 중 화면을 잠깐 가렸다 다시 켜면 wake lock이 풀리므로 재요청
+document.addEventListener('visibilitychange', () => {
+    if (_wakeWanted && !_wakeLock && document.visibilityState === 'visible') {
+        acquireWakeLock();
+    }
+});
+
 async function runAIAnalysis() {
     const loading = document.getElementById('aiLoading');
     loading.style.display = '';
     document.getElementById('analysisArea').style.display = 'none';
+    acquireWakeLock(); // 분석 동안 화면 꺼짐 방지
 
     try {
         const weekStart = document.getElementById('periodStart').value;
@@ -505,6 +530,7 @@ async function runAIAnalysis() {
     } finally {
         loading.style.display = 'none';
         setAILoadingText('AI가 식단표를 분석하고 있어요...');
+        releaseWakeLock(); // 분석 끝나면 화면 잠금 정상화
     }
 }
 
