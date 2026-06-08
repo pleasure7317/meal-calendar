@@ -53,6 +53,7 @@ body::before {
     text-align: center;
     position: relative;
     overflow: hidden;
+    border-radius: 0 0 24px 24px;
 }
 
 .mood-section::before {
@@ -75,6 +76,46 @@ body::before {
     position: relative;
     max-width: 600px;
     margin: 0 auto;
+}
+
+/* ===== Reset Section ===== */
+.reset-section {
+    text-align: center;
+    padding: 30px 20px 50px;
+}
+
+.btn-reset {
+    background: rgba(255, 255, 255, 0.85);
+    color: #c0392b;
+    border: 1.5px solid #e8b4b4;
+    padding: 12px 28px;
+    border-radius: 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-reset:hover {
+    background: #c0392b;
+    color: #fff;
+    border-color: #c0392b;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
 }
 
 .mood-title {
@@ -1204,31 +1245,41 @@ body::before {
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
     .today-row {
-        flex-direction: column;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 8px;
     }
 
     .today-label {
-        flex-direction: row;
+        flex-direction: column;
         min-width: unset;
-        padding: 16px 24px;
-        gap: 12px;
+        flex-shrink: 0;
+        padding: 12px 12px;
+        gap: 4px;
+        justify-content: center;
     }
 
     .today-label-icon {
         margin-bottom: 0;
+        font-size: 1.5rem;
     }
 
     .today-label h2 {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
 
     .today-meals {
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
+        flex: 1;
     }
 
     .today-meal-card {
         padding: 14px 6px;
+    }
+
+    .today-meal-content {
+        font-size: 0.9rem;
     }
 
     .calendar-day {
@@ -1291,7 +1342,7 @@ body::before {
     }
 
     .today-meal-content {
-        font-size: 0.75rem;
+        font-size: 0.82rem;
     }
 
     .calendar-day {

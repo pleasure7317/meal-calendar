@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Our Meal Calendar</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260608g">
+    <link rel="stylesheet" href="style.css?v=20260608j">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -186,6 +186,35 @@
     </div>
 
 
-    <script src="app.js?v=20260608g"></script>
+    <!-- Reset Button -->
+    <div class="reset-section">
+        <button class="btn-reset" id="openReset">🗑️ 식단 초기화</button>
+    </div>
+
+    <!-- Reset Modal (Popup) -->
+    <div class="modal-overlay" id="resetOverlay">
+        <div class="modal reset-modal">
+            <button class="modal-close" id="resetClose">✕</button>
+            <h3 class="register-title">🗑️ 식단 초기화</h3>
+            <p class="register-desc">삭제할 방법을 선택해주세요</p>
+
+            <div class="register-step">
+                <label class="register-label">기간 선택 삭제</label>
+                <div class="period-selector">
+                    <input type="date" id="resetStart" class="period-input">
+                    <span class="period-arrow">~</span>
+                    <input type="date" id="resetEnd" class="period-input">
+                </div>
+                <button class="btn-primary" id="btnDeleteRange" style="width:100%; margin-top:12px;">선택 기간 삭제</button>
+            </div>
+
+            <div class="register-step">
+                <label class="register-label">전체 삭제</label>
+                <button class="btn-danger" id="btnDeleteAll" style="width:100%;">⚠️ 모든 식단 삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=20260608h"></script>
 </body>
 </html>

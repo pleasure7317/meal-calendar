@@ -488,6 +488,80 @@ async function saveWeekFromGrid(gridId) {
     showToast('식단이 달력에 저장되었어요! 🎉');
 }
 
+// ==================== Reset Modal ====================
+const resetOverlay = document.getElementById('resetOverlay');
+
+document.getElementById('openReset').addEventListener('click', () => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    document.getElementById('resetStart').value = getMealKey(monday);
+    document.getElementById('resetEnd').value = getMealKey(sunday);
+    resetOverlay.classList.add('show');
+});
+
+document.getElementById('resetClose').addEventListener('click', () => {
+    resetOverlay.classList.remove('show');
+});
+
+resetOverlay.addEventListener('click', e => {
+    if (e.target === e.currentTarget) resetOverlay.classList.remove('show');
+});
+
+async function deleteMealsRange(startKey, endKey) {
+    try {
+        if (sb) {
+            const { error } = await sb.from('meals').delete()
+                .gte('date_key', startKey).lte('date_key', endKey);
+            if (error) throw error;
+        }
+    } catch (err) {
+        console.error('DB delete error:', err);
+    }
+    for (const key of Object.keys(mealsCache)) {
+        if (key >= startKey && key <= endKey) delete mealsCache[key];
+    }
+}
+
+async function deleteAllMeals() {
+    try {
+        if (sb) {
+            const { error } = await sb.from('meals').delete().gte('id', 0);
+            if (error) throw error;
+        }
+    } catch (err) {
+        console.error('DB delete-all error:', err);
+    }
+    mealsCache = {};
+}
+
+document.getElementById('btnDeleteRange').addEventListener('click', async () => {
+    const start = document.getElementById('resetStart').value;
+    const end = document.getElementById('resetEnd').value;
+    if (!start || !end) { showToast('기간을 선택해주세요!'); return; }
+    if (start > end) { showToast('시작일이 종료일보다 늦어요!'); return; }
+    if (!confirm(`${start} ~ ${end} 기간의 식단을 삭제할까요?`)) return;
+    showToast('삭제 중...');
+    await deleteMealsRange(start, end);
+    updateTodayMenu();
+    renderCalendar();
+    resetOverlay.classList.remove('show');
+    showToast('선택한 기간의 식단을 삭제했어요! 🗑️');
+});
+
+document.getElementById('btnDeleteAll').addEventListener('click', async () => {
+    if (!confirm('정말 모든 식단을 삭제할까요? 되돌릴 수 없어요!')) return;
+    showToast('삭제 중...');
+    await deleteAllMeals();
+    updateTodayMenu();
+    renderCalendar();
+    resetOverlay.classList.remove('show');
+    showToast('모든 식단을 삭제했어요! 🗑️');
+});
+
 const dayNames = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일'];
 
 function buildWeekGrid(gridId) {
