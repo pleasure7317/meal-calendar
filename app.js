@@ -1440,27 +1440,10 @@ function browserSpeak(text) {
     } catch (e) { /* noop */ }
 }
 
-let _ttsAudio = null;
-// 발음 듣기: OpenAI 자연 음성 우선, 실패 시 브라우저 음성
-async function speakEnglish(text) {
+// 발음 듣기: 브라우저 기본 음성 사용
+function speakEnglish(text) {
     if (!text) return;
-    try {
-        if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
-        const res = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
-        if (!res.ok) throw new Error('tts ' + res.status);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        _ttsAudio = new Audio(url);
-        _ttsAudio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
-        await _ttsAudio.play();
-    } catch (e) {
-        // OpenAI 음성 실패(또는 iOS 자동재생 차단) → 브라우저 음성으로
-        browserSpeak(text);
-    }
+    browserSpeak(text);
 }
 // 음성 목록은 비동기로 로드되므로 미리 한 번 트리거
 if ('speechSynthesis' in window) {
