@@ -171,6 +171,16 @@ function itemName(item) {
     return item.replace(/\s*\([^)]*\)\s*$/, '').trim();
 }
 
+// 탄·단·지방 한 줄 (값이 있을 때만)
+function macrosLine(item) {
+    const n = parseItemNutrition(item);
+    const parts = [];
+    if (n.carbs != null) parts.push(`탄 ${n.carbs}g`);
+    if (n.protein != null) parts.push(`단 ${n.protein}g`);
+    if (n.fat != null) parts.push(`지 ${n.fat}g`);
+    return parts.join(' · ');
+}
+
 // 메뉴 한 개의 칼로리 추정 (숫자 반환, 없으면 null)
 function itemCalorie(item) {
     if (!item) return null;
@@ -868,12 +878,16 @@ function updateModalContent() {
 
     if (meals && meals[currentTab]) {
         const items = meals[currentTab].split('\n').filter(Boolean);
-        list.innerHTML = items.map(item =>
-            `<div class="modal-meal-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">
-                <span>${withCalorie(item)}</span>
+        list.innerHTML = items.map(item => {
+            const macros = macrosLine(item);
+            return `<div class="modal-meal-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">
+                <div class="mmi-text">
+                    <span class="mmi-name">${withCalorie(item)}</span>
+                    ${macros ? `<span class="mmi-macros">${macros}</span>` : ''}
+                </div>
                 <span class="search-icon">🔍</span>
-            </div>`
-        ).join('');
+            </div>`;
+        }).join('');
         const cal = estimateCalories(meals[currentTab]);
         calorieEl.textContent = cal || '정보 없음';
     } else {

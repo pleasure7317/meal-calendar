@@ -1318,6 +1318,21 @@ body::before {
     content: '•';
     color: var(--primary);
     font-weight: bold;
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.modal-meal-item .mmi-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.modal-meal-item .mmi-macros {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    font-weight: 500;
 }
 
 .modal-meal-item .search-icon {
@@ -1325,6 +1340,7 @@ body::before {
     font-size: 0.8rem;
     opacity: 0.5;
     transition: opacity 0.2s;
+    align-self: center;
 }
 
 /* hover 효과는 마우스 기기에서만 (터치에서 두 번 탭 방지) */
