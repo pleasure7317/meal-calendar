@@ -124,23 +124,45 @@ body::before {
     position: absolute;
     top: 10px;
     right: 10px;
-    width: 34px;
-    height: 34px;
+    width: 29px;
+    height: 29px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(150, 120, 170, 0.22);
+    background: rgba(235, 232, 238, 0.7);
+    border: 1px solid rgba(150, 120, 170, 0.18);
     border-radius: 50%;
-    font-size: 1rem;
+    font-size: 0.85rem;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(70, 50, 90, 0.12);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 1px 4px rgba(70, 50, 90, 0.1);
+    transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
     z-index: 2;
 }
+/* 스크랩 안 된 상태: 핀이 회색으로 흐릿 */
+.english-scrap:not(.scrapped) img.emoji,
+.english-scrap:not(.scrapped) {
+    filter: grayscale(0.9);
+}
+.english-scrap:not(.scrapped) img.emoji {
+    opacity: 0.55;
+}
+/* 스크랩된 상태: 색 들어오고 또렷 + 핀 강조 */
+.english-scrap.scrapped {
+    background: linear-gradient(135deg, var(--primary-light), #fff);
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(232, 160, 191, 0.5);
+    filter: none;
+}
+.english-scrap.scrapped img.emoji {
+    opacity: 1;
+    filter: none;
+}
 .english-scrap:hover {
-    transform: scale(1.1);
-    box-shadow: 0 4px 10px rgba(70, 50, 90, 0.2);
+    transform: scale(1.12);
+}
+/* 클릭 순간 눌리는 느낌 */
+.english-scrap:active {
+    transform: scale(0.86);
 }
 
 .english-main {

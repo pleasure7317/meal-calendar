@@ -1396,6 +1396,7 @@ function updateEnglishPhrase() {
     enEl.dataset.idx = cur.idx;
     const catEl = document.getElementById('englishCat');
     if (catEl) catEl.textContent = `(${PHRASE_CATS[cur.idx] || ''})`;
+    updateScrapButton();
 }
 
 // "한 개 더" → 다른 표현으로 바꿈 (노트에는 안 들어감, 스크랩해야 들어감)
@@ -1412,17 +1413,30 @@ function loadScraps() {
 }
 function saveScraps(s) { localStorage.setItem('englishScraps', JSON.stringify(s)); }
 
-// 현재 표현을 표현 노트에 스크랩
+// 스크랩 버튼 상태 갱신 (현재 표현이 스크랩돼 있으면 활성 표시)
+function updateScrapButton() {
+    const btn = document.getElementById('scrapBtn');
+    if (!btn) return;
+    const cur = getCurrentEnglish();
+    const scrapped = loadScraps().some(s => s.idx === cur.idx);
+    btn.classList.toggle('scrapped', scrapped);
+}
+
+// 현재 표현 스크랩 토글 (누르면 추가/해제)
 function scrapEnglish() {
     const cur = getCurrentEnglish();
     const scraps = loadScraps();
-    if (scraps.some(s => s.idx === cur.idx)) {
-        showToast('이미 스크랩한 표현이에요 📌');
-        return;
+    const i = scraps.findIndex(s => s.idx === cur.idx);
+    if (i >= 0) {
+        scraps.splice(i, 1);
+        saveScraps(scraps);
+        showToast('스크랩을 해제했어요');
+    } else {
+        scraps.push({ idx: cur.idx, date: getMealKey(new Date()) });
+        saveScraps(scraps);
+        showToast('표현 노트에 스크랩했어요! 📌');
     }
-    scraps.push({ idx: cur.idx, date: getMealKey(new Date()) });
-    saveScraps(scraps);
-    showToast('표현 노트에 스크랩했어요! 📌');
+    updateScrapButton();
 }
 
 // 영어 발음 듣기 (브라우저 내장 음성합성)
@@ -1461,6 +1475,7 @@ function deleteEnglishItem(pos) {
     scraps.splice(pos, 1);
     saveScraps(scraps);
     renderEnglishNote();
+    updateScrapButton();
 }
 
 function renderEnglishNote() {
