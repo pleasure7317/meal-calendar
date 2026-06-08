@@ -918,7 +918,7 @@ async function loadWeather() {
                 const pty = (c.pty && c.pty !== '0') ? c.pty : (near ? near.pty : '0');
                 nowEl.textContent = `지금 ${weatherIcon(sky, pty)} ${c.temp}° ${weatherDesc(sky, pty)}`;
             } else if (near) {
-                nowEl.textContent = `${weatherIcon(near.sky, near.pty)} ${near.temp}° ${weatherDesc(near.sky, near.pty)}`;
+                nowEl.textContent = `지금 ${weatherIcon(near.sky, near.pty)} ${near.temp}° ${weatherDesc(near.sky, near.pty)}`;
             }
         }
 
