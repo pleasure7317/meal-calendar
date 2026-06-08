@@ -16,10 +16,10 @@ try {
 // 로컬에 받아둔 Microsoft Fluent 3D 이모지 목록 (codepoint 키)
 const FLUENT3D = new Set([
     '1f305','1f319','1f324','1f326','1f327','1f328','1f338','1f35a','1f373','1f37d',
-    '1f389','1f3ac','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4d7','1f4f7',
-    '1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624','1f62e-200d-1f4a8','1f634',
-    '1f912','1f917','1f929','1f963','1f969','1f970','1f97a','1f9c8','2600','2601',
-    '26a0','26c5','270f','2728','2744'
+    '1f389','1f3ac','1f446','1f495','1f497','1f4a7','1f4aa','1f4bc','1f4ca','1f4d7',
+    '1f4f7','1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624','1f62e-200d-1f4a8',
+    '1f634','1f912','1f917','1f929','1f963','1f969','1f970','1f97a','1f9c8','2600',
+    '2601','25b6','25c0','26a0','26c5','270f','2728','2744'
 ]);
 
 let _emojiTimer = null;
@@ -35,9 +35,9 @@ function refreshEmoji() {
             if (_emojiObserver) _emojiObserver.disconnect();
             twemoji.parse(document.body, {
                 callback: (icon) => {
-                    // 받아둔 3D 이모지는 로컬 PNG, 나머지는 트위터 SVG로 폴백
-                    if (FLUENT3D.has(icon)) return `emoji/${icon}.png`;
-                    return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/${icon}.svg`;
+                    // 받아둔 3D 이모지만 로컬 PNG로 변환, 나머지는 그대로 둠
+                    // (외부 폴백 CDN을 쓰지 않아 깜빡임/로딩 문제 없음)
+                    return FLUENT3D.has(icon) ? `emoji/${icon}.png` : false;
                 },
             });
         } catch (e) { /* noop */ } finally {
