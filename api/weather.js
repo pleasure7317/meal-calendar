@@ -40,9 +40,11 @@ function extractJson(str, startKey) {
 }
 
 export default async function handler(req, res) {
-    // KST 오늘 날짜
+    // KST 오늘/내일 날짜 (자정 넘어가도 12시간 채우려면 내일치도 필요)
     const now = new Date(Date.now() + 9 * 3600 * 1000);
-    const todayStr = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+    const ymd = (d) => `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+    const todayStr = ymd(now);
+    const tomorrowStr = ymd(new Date(now.getTime() + 24 * 3600 * 1000));
 
     try {
         const r = await fetch(`https://weather.naver.com/today/${NAVER_RCODE}`, {
@@ -82,7 +84,7 @@ export default async function handler(req, res) {
                     return isNaN(n) ? null : n;
                 };
                 hours = list
-                    .filter(it => it.aplYmd === todayStr && it.tmpr != null)
+                    .filter(it => (it.aplYmd === todayStr || it.aplYmd === tomorrowStr) && it.tmpr != null)
                     .map(it => {
                         const prob = num(it.rainProb);
                         const amt = num(it.rainAmt) ?? num(it.oneHourRainAmt);
@@ -91,13 +93,15 @@ export default async function handler(req, res) {
                         if (prob != null && prob > 0) precip = `${prob}%`;
                         else if (amt != null && amt > 0) precip = `${amt}mm`;
                         return {
+                            ymd: it.aplYmd,
                             time: String(it.aplTm).padStart(2, '0') + '00',
                             temp: Math.round(it.tmpr),
                             precip,
                             desc: it.wetrTxt || '',
                             icon: wetrIcon(it.wetrTxt),
                         };
-                    });
+                    })
+                    .sort((a, b) => (a.ymd + a.time).localeCompare(b.ymd + b.time));
             } catch (e) { /* noop */ }
         }
 

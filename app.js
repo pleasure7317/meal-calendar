@@ -936,11 +936,14 @@ function renderWeather(data) {
     if (!wrap || !data) return false;
     const hours = data.hours || [];
 
-    // 현재 시각 이후의 시간만 (지난 시간은 제외)
+    // 현재 시각(KST) 기준, 지금 시각 이후 12시간만 (자정 넘어서도 이어서)
     const k = new Date(Date.now() + 9 * 3600 * 1000);
-    const nowHHMM = String(k.getUTCHours()).padStart(2, '0') + '00';
-    let upcoming = hours.filter(h => h.time >= nowHHMM);
+    const nowYmd = `${k.getUTCFullYear()}${String(k.getUTCMonth() + 1).padStart(2, '0')}${String(k.getUTCDate()).padStart(2, '0')}`;
+    const nowKey = nowYmd + String(k.getUTCHours()).padStart(2, '0');
+    const keyOf = (h) => (h.ymd || nowYmd) + h.time.slice(0, 2);
+    let upcoming = hours.filter(h => keyOf(h) >= nowKey);
     if (upcoming.length === 0) upcoming = hours;
+    upcoming = upcoming.slice(0, 12);
     if (upcoming.length === 0) return false;
 
     // 현재 요약: 네이버 현재 관측값 우선, 없으면 가장 가까운 시간
@@ -1004,7 +1007,11 @@ async function loadWeather() {
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
-    try { loadWeather(); } catch (e) { console.warn('날씨 로드 실패:', e); }
+    try {
+        loadWeather();
+        // 페이지를 열어둬도 시간이 지나면 자동으로 한 칸씩 굴러가게 주기적 갱신
+        setInterval(loadWeather, 10 * 60 * 1000);
+    } catch (e) { console.warn('날씨 로드 실패:', e); }
     try {
         await loadMealsFromDB();
     } catch (e) {
