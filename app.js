@@ -1473,6 +1473,7 @@ function updateEnglishPhrase() {
     const catEl = document.getElementById('englishCat');
     if (catEl) catEl.textContent = `(${PHRASE_CATS[cur.idx] || ''})`;
     updateScrapButton();
+    prefetchTTS(p.en); // 미리 음성 받아두기 → 발음 듣기 즉시
 }
 
 // "한 개 더" → 다른 표현으로 바꿈 (노트에는 안 들어감, 스크랩해야 들어감)
@@ -1544,20 +1545,43 @@ function ttsAudioEl() {
     return _ttsAudio;
 }
 
-// 서버(OpenAI) 음성 재생
-async function serverSpeak(text) {
-    try {
+// 생성된 음성 캐시 (text -> blob URL) : 같은 문장 즉시 재생
+const _ttsCache = new Map();
+let _ttsInflight = new Map(); // 진행 중인 요청 중복 방지
+
+async function fetchTTS(text) {
+    if (_ttsCache.has(text)) return _ttsCache.get(text);
+    if (_ttsInflight.has(text)) return _ttsInflight.get(text);
+    const p = (async () => {
         const res = await fetch('/api/tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text }),
         });
-        if (!res.ok) return false;
+        if (!res.ok) throw new Error('tts ' + res.status);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
+        _ttsCache.set(text, url);
+        _ttsInflight.delete(text);
+        return url;
+    })().catch(e => { _ttsInflight.delete(text); throw e; });
+    _ttsInflight.set(text, p);
+    return p;
+}
+
+// 표현이 화면에 뜨면 미리 음성을 받아둠 → 누르면 즉시 재생
+function prefetchTTS(text) {
+    if (!text || _ttsCache.has(text)) return;
+    fetchTTS(text).catch(() => {});
+}
+
+// 서버(OpenAI) 음성 재생 (캐시되어 있으면 즉시)
+async function serverSpeak(text) {
+    try {
+        const url = await fetchTTS(text);
         const a = ttsAudioEl();
         a.src = url;
-        a.onended = () => { URL.revokeObjectURL(url); };
+        a.currentTime = 0;
         await a.play();
         return true;
     } catch (e) { return false; }
