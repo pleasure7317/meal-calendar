@@ -126,6 +126,11 @@ body::before {
     margin-bottom: 6px;
 }
 
+.english-cat {
+    color: var(--accent);
+    font-weight: 600;
+}
+
 .english-en {
     font-family: 'Gowun Batang', serif;
     font-size: 1.12rem;
