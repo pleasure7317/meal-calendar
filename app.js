@@ -1422,18 +1422,49 @@ function studyMoreEnglish() {
 }
 
 // 영어 발음 듣기 (브라우저 내장 음성합성)
-function speakEnglish(text) {
+// 브라우저 기본 음성 (폴백): 자연스러운 영어 음성 우선 선택
+function browserSpeak(text) {
     try {
-        if (!('speechSynthesis' in window)) {
-            showToast('이 브라우저는 발음 듣기를 지원하지 않아요 😢');
-            return;
-        }
+        if (!('speechSynthesis' in window)) return;
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
         u.lang = 'en-US';
-        u.rate = 0.92;
+        u.rate = 0.95;
+        const voices = window.speechSynthesis.getVoices() || [];
+        // 자연스러운 음성 우선순위 (기기에 있는 것 중에서)
+        const prefer = ['Google US English', 'Samantha', 'Aria', 'Jenny', 'Ava', 'Allison', 'Microsoft Aria', 'Microsoft Jenny'];
+        let v = voices.find(x => prefer.some(p => x.name.includes(p)) && /en[-_]?US/i.test(x.lang));
+        if (!v) v = voices.find(x => /en[-_]?US/i.test(x.lang));
+        if (v) u.voice = v;
         window.speechSynthesis.speak(u);
     } catch (e) { /* noop */ }
+}
+
+let _ttsAudio = null;
+// 발음 듣기: OpenAI 자연 음성 우선, 실패 시 브라우저 음성
+async function speakEnglish(text) {
+    if (!text) return;
+    try {
+        if (_ttsAudio) { _ttsAudio.pause(); _ttsAudio = null; }
+        const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        if (!res.ok) throw new Error('tts ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        _ttsAudio = new Audio(url);
+        _ttsAudio.onended = () => { URL.revokeObjectURL(url); _ttsAudio = null; };
+        await _ttsAudio.play();
+    } catch (e) {
+        // OpenAI 음성 실패(또는 iOS 자동재생 차단) → 브라우저 음성으로
+        browserSpeak(text);
+    }
+}
+// 음성 목록은 비동기로 로드되므로 미리 한 번 트리거
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
 }
 
 // 표현 노트에서 한 항목 삭제
