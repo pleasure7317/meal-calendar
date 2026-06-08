@@ -681,14 +681,23 @@ body::before {
 }
 
 .today-meal-content .menu-item {
-    padding: 3px 0;
+    padding: 4px 0;
     cursor: pointer;
     border-radius: 6px;
     transition: background 0.2s;
 }
 
-.today-meal-content .menu-item:hover {
-    background: var(--primary-light);
+/* 오늘의 메뉴: 칼로리를 항상 이름 아래 줄로 (정렬 통일) */
+.today-meal-content .menu-item .item-cal {
+    display: block;
+    margin-left: 0;
+    margin-top: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .today-meal-content .menu-item:hover {
+        background: var(--primary-light);
+    }
 }
 
 .no-meal {
