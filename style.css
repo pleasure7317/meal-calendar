@@ -4,6 +4,11 @@
     box-sizing: border-box;
 }
 
+html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
 /* Twemoji 고급 이모지 인라인 표시 */
 img.emoji {
     height: 1.1em;
@@ -1621,9 +1626,35 @@ body::before {
         max-width: 100%;
     }
 
+    /* 아이폰 등 좁은 폭: 상단 바가 넘치지 않게 정리 */
+    .calendar-top-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .calendar-top-bar > div:empty {
+        display: none;
+    }
+    .calendar-header {
+        order: 1;
+        width: 100%;
+        gap: 10px;
+    }
+    .btn-register {
+        order: 2;
+        padding: 9px 18px;
+    }
     .calendar-month {
         font-size: 1.2rem;
-        min-width: 150px;
+        min-width: 0;
+        flex: 1;
+        max-width: 180px;
+    }
+    .nav-btn {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
     }
 }
 
