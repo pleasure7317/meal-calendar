@@ -33,8 +33,8 @@ export default async function handler(req, res) {
         }
         const buf = Buffer.from(await r.arrayBuffer());
         res.setHeader('Content-Type', 'audio/mpeg');
-        // 같은 문장 반복 재생은 캐시로 빠르게
-        res.setHeader('Cache-Control', 'public, max-age=604800, s-maxage=604800');
+        // 같은 문장은 브라우저 7일 + CDN 30일 캐시 (재호출·재과금 없음)
+        res.setHeader('Cache-Control', 'public, max-age=604800, s-maxage=2592000, stale-while-revalidate=604800');
         return res.status(200).send(buf);
     } catch (err) {
         return res.status(500).json({ error: err.message });
