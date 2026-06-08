@@ -1,17 +1,88 @@
+// ==================== Supabase Init ====================
+const SUPABASE_URL = 'https://kgwlzvmnvlzrpjatnfmt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_rLsCWwHlvRDFLHa7xnV9ZQ_9HA834a-';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ==================== Data Store ====================
-const STORAGE_KEY = 'mealCalendarData';
-const MOOD_KEY = 'mealCalendarMood';
 const API_KEY_STORAGE = 'mealCalendarApiKey';
 const API_PROVIDER_STORAGE = 'mealCalendarApiProvider';
 
-function loadMeals() {
+// In-memory cache
+let mealsCache = {};
+let cacheLoaded = false;
+
+async function loadMealsFromDB() {
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-    } catch { return {}; }
+        const { data, error } = await supabase.from('meals').select('*');
+        if (error) throw error;
+        const result = {};
+        for (const row of data) {
+            result[row.date_key] = {
+                breakfast: row.breakfast || '',
+                lunch: row.lunch || '',
+                dinner: row.dinner || '',
+            };
+        }
+        mealsCache = result;
+        cacheLoaded = true;
+        return result;
+    } catch (err) {
+        console.error('DB load error:', err);
+        return mealsCache;
+    }
 }
 
-function saveMeals(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function loadMeals() {
+    return mealsCache;
+}
+
+async function saveMealToDB(dateKey, meals) {
+    try {
+        const { error } = await supabase.from('meals').upsert({
+            date_key: dateKey,
+            breakfast: meals.breakfast || '',
+            lunch: meals.lunch || '',
+            dinner: meals.dinner || '',
+            updated_at: new Date().toISOString(),
+        }, { onConflict: 'date_key' });
+        if (error) throw error;
+    } catch (err) {
+        console.error('DB save error:', err);
+    }
+}
+
+async function saveMeals(data) {
+    mealsCache = data;
+    const promises = [];
+    for (const [dateKey, meals] of Object.entries(data)) {
+        if (meals.breakfast || meals.lunch || meals.dinner) {
+            promises.push(saveMealToDB(dateKey, meals));
+        }
+    }
+    await Promise.all(promises);
+}
+
+async function saveMoodToDB(dateKey, mood) {
+    try {
+        await supabase.from('moods').upsert({
+            date_key: dateKey,
+            mood: mood,
+        }, { onConflict: 'date_key' });
+    } catch (err) {
+        console.error('Mood save error:', err);
+    }
+}
+
+async function loadMoodFromDB(dateKey) {
+    try {
+        const { data, error } = await supabase
+            .from('moods')
+            .select('mood')
+            .eq('date_key', dateKey)
+            .single();
+        if (error || !data) return null;
+        return data.mood;
+    } catch { return null; }
 }
 
 function getMealKey(date) {
@@ -79,24 +150,23 @@ document.querySelectorAll('.mood-btn').forEach(btn => {
         const msg = document.getElementById('moodMessage');
         msg.textContent = moodMessages[mood];
         msg.classList.add('show');
-        localStorage.setItem(MOOD_KEY, JSON.stringify({ mood, date: getMealKey(new Date()) }));
+        saveMoodToDB(getMealKey(new Date()), mood);
     });
 });
 
-(function restoreMood() {
-    try {
-        const saved = JSON.parse(localStorage.getItem(MOOD_KEY));
-        if (saved && saved.date === getMealKey(new Date())) {
-            const btn = document.querySelector(`.mood-btn[data-mood="${saved.mood}"]`);
-            if (btn) {
-                btn.classList.add('selected');
-                const msg = document.getElementById('moodMessage');
-                msg.textContent = moodMessages[saved.mood];
-                msg.classList.add('show');
-            }
+async function restoreMood() {
+    const todayKey = getMealKey(new Date());
+    const mood = await loadMoodFromDB(todayKey);
+    if (mood) {
+        const btn = document.querySelector(`.mood-btn[data-mood="${mood}"]`);
+        if (btn) {
+            btn.classList.add('selected');
+            const msg = document.getElementById('moodMessage');
+            msg.textContent = moodMessages[mood];
+            msg.classList.add('show');
         }
-    } catch {}
-})();
+    }
+}
 
 // ==================== Today's Menu ====================
 function updateTodayMenu() {
@@ -463,7 +533,7 @@ document.getElementById('btnSubmitMeal').addEventListener('click', async () => {
     }
 });
 
-function saveWeekFromGrid(gridId) {
+async function saveWeekFromGrid(gridId) {
     const startDate = document.getElementById('periodStart').value;
     if (!startDate) {
         showToast('기간을 선택해주세요!');
@@ -484,7 +554,8 @@ function saveWeekFromGrid(gridId) {
         data[key][type] = ta.value.trim();
     });
 
-    saveMeals(data);
+    showToast('저장 중...');
+    await saveMeals(data);
     updateTodayMenu();
     renderCalendar();
     registerOverlay.classList.remove('show');
@@ -754,5 +825,18 @@ function showToast(message) {
 }
 
 // ==================== Init ====================
-updateTodayMenu();
-initCalendar();
+async function init() {
+    try {
+        await loadMealsFromDB();
+    } catch (e) {
+        console.warn('DB 로드 실패, 빈 상태로 시작:', e);
+    }
+    updateTodayMenu();
+    initCalendar();
+    try {
+        await restoreMood();
+    } catch (e) {
+        console.warn('기분 로드 실패:', e);
+    }
+}
+init();
