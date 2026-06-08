@@ -163,19 +163,22 @@ body::before {
     flex-direction: column;
     align-items: center;
     gap: 3px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.32);
+    backdrop-filter: blur(12px) saturate(1.2);
+    -webkit-backdrop-filter: blur(12px) saturate(1.2);
     color: var(--text);
-    border: 1px solid rgba(150, 120, 170, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.55);
     border-radius: 14px;
     padding: 12px 14px;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 2px 8px rgba(90, 70, 110, 0.07);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: 0 4px 14px rgba(80, 60, 100, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .english-note-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 14px rgba(90, 70, 110, 0.14);
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 7px 18px rgba(80, 60, 100, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .english-note-btn .note-icon {
@@ -190,23 +193,9 @@ body::before {
     color: var(--text-light);
 }
 
-/* 기능별 은은한 톤 (낮은 채도 = 세련됨) */
-.english-note-btn.speak {
-    background: rgba(98, 155, 200, 0.12);
-    border-color: rgba(98, 155, 200, 0.28);
-}
-.english-note-btn.speak .note-label { color: #4a7ba6; }
-
-.english-note-btn.study-more {
-    background: rgba(218, 150, 110, 0.13);
-    border-color: rgba(218, 150, 110, 0.3);
-}
+/* 색은 글자에만 은은하게 (배경은 모두 같은 간유리) */
+.english-note-btn.speak .note-label { color: #3f72a3; }
 .english-note-btn.study-more .note-label { color: #b06a3e; }
-
-.english-note-btn#openEnglishNote {
-    background: rgba(170, 120, 185, 0.12);
-    border-color: rgba(170, 120, 185, 0.28);
-}
 .english-note-btn#openEnglishNote .note-label { color: #8d5a9c; }
 
 /* 표현 노트 모달 리스트 */
