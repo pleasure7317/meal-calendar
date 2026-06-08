@@ -957,34 +957,23 @@ body::before {
 .calendar-day.sat .day-number { color: #64b5f6; }
 
 .day-meals {
-    font-size: 0.65rem;
-    line-height: 1.4;
-}
-
-.day-meal-tag {
     display: flex;
-    align-items: flex-start;
-    gap: 3px;
-    margin-bottom: 3px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    color: var(--text);
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
 }
 
-.day-meal-tag .tag-icon {
-    flex-shrink: 0;
-    font-size: 0.6rem;
+.day-meal-icon {
+    font-size: 0.95rem;
+    line-height: 1;
 }
 
-.day-meal-tag .tag-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+.day-meal-icon img.emoji {
+    height: 1em;
+    width: 1em;
+    vertical-align: middle;
+    margin: 0;
 }
-
-.day-meal-tag.breakfast { background: rgba(255, 183, 77, 0.15); }
-.day-meal-tag.lunch { background: rgba(129, 199, 132, 0.15); }
-.day-meal-tag.dinner { background: rgba(121, 134, 203, 0.15); }
 
 /* ========== Modal ========== */
 .modal-overlay {
@@ -1443,9 +1432,8 @@ body::before {
         padding: 4px;
     }
 
-    .day-meal-tag {
-        font-size: 0.55rem;
-        padding: 1px 2px;
+    .day-meal-icon {
+        font-size: 0.8rem;
     }
 
     .day-number {

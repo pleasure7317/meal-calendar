@@ -684,16 +684,13 @@ function renderCalendar() {
         let mealsHtml = '';
         if (meals) {
             if (meals.breakfast) {
-                const first = meals.breakfast.split('\n')[0];
-                mealsHtml += `<div class="day-meal-tag breakfast"><span class="tag-icon">🌅</span><span class="tag-text">${first}</span></div>`;
+                mealsHtml += `<span class="day-meal-icon breakfast" title="조식">🌅</span>`;
             }
             if (meals.lunch) {
-                const first = meals.lunch.split('\n')[0];
-                mealsHtml += `<div class="day-meal-tag lunch"><span class="tag-icon">☀️</span><span class="tag-text">${first}</span></div>`;
+                mealsHtml += `<span class="day-meal-icon lunch" title="중식">☀️</span>`;
             }
             if (meals.dinner) {
-                const first = meals.dinner.split('\n')[0];
-                mealsHtml += `<div class="day-meal-tag dinner"><span class="tag-icon">🌙</span><span class="tag-text">${first}</span></div>`;
+                mealsHtml += `<span class="day-meal-icon dinner" title="석식">🌙</span>`;
             }
         }
 
