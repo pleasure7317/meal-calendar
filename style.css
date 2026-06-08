@@ -87,6 +87,95 @@ body::before {
     margin: 0 auto;
 }
 
+/* ===== Weather Section ===== */
+.weather-section {
+    background: linear-gradient(135deg, rgba(187,222,251,0.85) 0%, rgba(225,245,254,0.85) 100%);
+    padding: 18px 16px;
+}
+
+.weather-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.weather-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.weather-title {
+    font-family: 'Gowun Batang', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1565c0;
+}
+
+.weather-now {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1976d2;
+}
+
+.weather-hours {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.weather-hours::-webkit-scrollbar {
+    height: 5px;
+}
+.weather-hours::-webkit-scrollbar-thumb {
+    background: rgba(25,118,210,0.3);
+    border-radius: 3px;
+}
+
+.weather-card {
+    flex: 0 0 auto;
+    min-width: 62px;
+    background: rgba(255,255,255,0.85);
+    border-radius: 14px;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(25,118,210,0.1);
+}
+
+.weather-time {
+    font-size: 0.78rem;
+    color: #607d8b;
+    font-weight: 600;
+}
+
+.weather-icon {
+    font-size: 1.5rem;
+}
+
+.weather-temp {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #37474f;
+}
+
+.weather-pop {
+    font-size: 0.7rem;
+    color: #1976d2;
+}
+
+.weather-loading {
+    color: #607d8b;
+    font-size: 0.9rem;
+    padding: 8px 0;
+}
+
 /* ===== Reset Section ===== */
 .reset-section {
     text-align: center;
@@ -193,7 +282,7 @@ body::before {
 
 /* ========== Today's Menu ========== */
 .today-section {
-    padding: 40px 20px;
+    padding: 40px 20px 12px;
     max-width: 1100px;
     margin: 0 auto;
 }
@@ -242,6 +331,7 @@ body::before {
     font-weight: 700;
     line-height: 1.5;
     color: white;
+    white-space: nowrap;
 }
 
 .today-meals {
@@ -722,7 +812,7 @@ body::before {
 
 /* ========== Calendar ========== */
 .calendar-section {
-    padding: 40px 20px 60px;
+    padding: 12px 20px 60px;
     max-width: 1100px;
     margin: 0 auto;
 }

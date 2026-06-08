@@ -855,6 +855,82 @@ function showToast(message) {
 }
 
 // ==================== Init ====================
+// ==================== Weather ====================
+function weatherIcon(sky, pty) {
+    const p = parseInt(pty, 10);
+    if (p === 1) return '🌧️';
+    if (p === 2) return '🌨️';
+    if (p === 3) return '❄️';
+    if (p === 4) return '🌦️';
+    const s = parseInt(sky, 10);
+    if (s === 1) return '☀️';
+    if (s === 3) return '⛅';
+    if (s === 4) return '☁️';
+    return '🌤️';
+}
+
+function weatherDesc(sky, pty) {
+    const p = parseInt(pty, 10);
+    if (p === 1) return '비';
+    if (p === 2) return '비/눈';
+    if (p === 3) return '눈';
+    if (p === 4) return '소나기';
+    const s = parseInt(sky, 10);
+    if (s === 1) return '맑음';
+    if (s === 3) return '구름많음';
+    if (s === 4) return '흐림';
+    return '';
+}
+
+async function loadWeather() {
+    const wrap = document.getElementById('weatherHours');
+    const nowEl = document.getElementById('weatherNow');
+    if (!wrap) return;
+    try {
+        const res = await fetch('/api/weather');
+        if (!res.ok) {
+            const e = await res.json().catch(() => ({}));
+            throw new Error(e.error || `오류 (${res.status})`);
+        }
+        const data = await res.json();
+        const hours = data.hours || [];
+
+        // 현재 시각 이후의 시간만 (지난 시간은 제외)
+        const nowHHMM = (() => {
+            const k = new Date(Date.now() + 9 * 3600 * 1000);
+            return String(k.getUTCHours()).padStart(2, '0') + '00';
+        })();
+        let upcoming = hours.filter(h => h.time >= nowHHMM);
+        if (upcoming.length === 0) upcoming = hours;
+
+        if (upcoming.length === 0) {
+            wrap.innerHTML = '<p class="weather-loading">날씨 정보가 없어요</p>';
+            return;
+        }
+
+        // 현재(가장 가까운 시간) 요약
+        const cur = upcoming[0];
+        if (nowEl && cur) {
+            nowEl.textContent = `${weatherIcon(cur.sky, cur.pty)} ${cur.temp}° ${weatherDesc(cur.sky, cur.pty)}`;
+        }
+
+        wrap.innerHTML = upcoming.map(h => {
+            const hh = parseInt(h.time.slice(0, 2), 10);
+            const label = `${hh}시`;
+            return `
+                <div class="weather-card">
+                    <span class="weather-time">${label}</span>
+                    <span class="weather-icon">${weatherIcon(h.sky, h.pty)}</span>
+                    <span class="weather-temp">${h.temp}°</span>
+                    <span class="weather-pop">💧${h.pop}%</span>
+                </div>`;
+        }).join('');
+    } catch (err) {
+        console.error('날씨 로드 실패:', err);
+        wrap.innerHTML = `<p class="weather-loading">날씨를 불러오지 못했어요 😢</p>`;
+    }
+}
+
 async function init() {
     try {
         await loadMealsFromDB();
@@ -875,6 +951,11 @@ async function init() {
         await restoreMood();
     } catch (e) {
         console.warn('기분 로드 실패:', e);
+    }
+    try {
+        loadWeather();
+    } catch (e) {
+        console.warn('날씨 로드 실패:', e);
     }
 }
 
