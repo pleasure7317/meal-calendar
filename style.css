@@ -529,6 +529,10 @@ body::before {
     max-width: 580px;
 }
 
+.reset-modal {
+    padding-bottom: 24px;
+}
+
 .register-title {
     font-family: 'Gowun Batang', serif;
     font-size: 1.3rem;
