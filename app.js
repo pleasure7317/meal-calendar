@@ -23,12 +23,16 @@ const FLUENT3D = new Set([
 ]);
 
 let _emojiTimer = null;
+let _emojiObserver = null;
 function refreshEmoji() {
     if (!window.twemoji) return;
     // 너무 자주 호출되는 걸 방지하기 위해 약간 디바운스
     clearTimeout(_emojiTimer);
     _emojiTimer = setTimeout(() => {
         try {
+            // 변환 중에는 옵저버를 잠시 꺼서 자기 자신이 만든 DOM 변경으로
+            // 다시 변환이 트리거되는 무한 루프(깜빡임)를 방지
+            if (_emojiObserver) _emojiObserver.disconnect();
             twemoji.parse(document.body, {
                 callback: (icon) => {
                     // 받아둔 3D 이모지는 로컬 PNG, 나머지는 트위터 SVG로 폴백
@@ -36,8 +40,12 @@ function refreshEmoji() {
                     return `https://cdn.jsdelivr.net/npm/twemoji@14.0.2/assets/svg/${icon}.svg`;
                 },
             });
-        } catch (e) { /* noop */ }
-    }, 30);
+        } catch (e) { /* noop */ } finally {
+            if (_emojiObserver) {
+                _emojiObserver.observe(document.body, { childList: true, subtree: true });
+            }
+        }
+    }, 50);
 }
 
 // ==================== Data Store ====================
@@ -1008,10 +1016,9 @@ if (document.readyState === 'loading') {
 
 // 동적으로 추가되는 이모지(달력/메뉴/모달)도 자동으로 Twemoji 변환
 function startEmojiWatcher() {
-    refreshEmoji();
-    if (!window.MutationObserver) return;
-    const observer = new MutationObserver(() => refreshEmoji());
-    observer.observe(document.body, { childList: true, subtree: true });
+    if (!window.MutationObserver) { refreshEmoji(); return; }
+    _emojiObserver = new MutationObserver(() => refreshEmoji());
+    refreshEmoji(); // 첫 변환 (끝나면 내부에서 옵저버를 켬)
 }
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', startEmojiWatcher);
