@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { image, weekStart } = req.body;
+        const { image, weekStart, draft } = req.body;
         if (!image) {
             return res.status(400).json({ error: 'No image provided' });
         }
@@ -18,8 +18,13 @@ export default async function handler(req, res) {
             ? `\n중요: 이 식단표가 속한 주의 월요일 날짜는 ${weekStart} 입니다. weekStart는 반드시 "${weekStart}"로 설정하세요. 이미지에 다른 날짜가 보여도 이 값을 우선합니다.\n`
             : '';
 
+        // 2차 검증 단계: 1차 결과(draft)를 이미지와 다시 대조해서 틀린 부분만 바로잡음
+        const draftLine = draft
+            ? `\n아래는 같은 식단표 이미지에서 1차로 추출한 결과입니다. 이미지를 다시 한 글자씩 대조하여, 잘못 읽었거나 엉뚱하게 바뀐 메뉴 이름·칸 위치를 바로잡아 최종 JSON으로 주세요. 이미 맞는 항목은 그대로 두세요. 이미지에 없는 메뉴를 새로 만들지 마세요.\n\n[1차 결과]\n${JSON.stringify(draft)}\n`
+            : '';
+
         const prompt = `이 이미지는 회사 식단표입니다. 표에 적힌 글자를 정확히 읽어, 각 요일별 조식/중식/석식 메뉴를 추출하세요.
-${weekStartLine}
+${weekStartLine}${draftLine}
 반드시 아래 JSON 형식으로만 응답하세요:
 {
   "weekStart": "YYYY-MM-DD",
