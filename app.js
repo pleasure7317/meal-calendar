@@ -952,12 +952,13 @@ function renderWeather(data) {
 
     wrap.innerHTML = upcoming.map(h => {
         const hh = parseInt(h.time.slice(0, 2), 10);
+        const precip = h.precip ? `<span class="weather-pop">💧${h.precip}</span>` : '';
         return `
             <div class="weather-card">
                 <span class="weather-time">${hh}시</span>
                 <span class="weather-icon">${h.icon || '🌤️'}</span>
                 <span class="weather-temp">${h.temp}°</span>
-                <span class="weather-pop">💧${h.pop}%</span>
+                ${precip}
             </div>`;
     }).join('');
     return true;

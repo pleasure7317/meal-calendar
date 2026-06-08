@@ -76,15 +76,28 @@ export default async function handler(req, res) {
         if (listStr) {
             try {
                 const list = JSON.parse(listStr);
+                const num = (v) => {
+                    if (v == null || v === '-' || v === '') return null;
+                    const n = parseFloat(String(v).replace('%', ''));
+                    return isNaN(n) ? null : n;
+                };
                 hours = list
                     .filter(it => it.aplYmd === todayStr && it.tmpr != null)
-                    .map(it => ({
-                        time: String(it.aplTm).padStart(2, '0') + '00',
-                        temp: Math.round(it.tmpr),
-                        pop: (it.rainProb == null || it.rainProb === '-') ? '0' : String(it.rainProb).replace('%', ''),
-                        desc: it.wetrTxt || '',
-                        icon: wetrIcon(it.wetrTxt),
-                    }));
+                    .map(it => {
+                        const prob = num(it.rainProb);
+                        const amt = num(it.rainAmt) ?? num(it.oneHourRainAmt);
+                        // 강수 표시: 확률이 있으면 %, 없고 강수량이 있으면 mm, 둘 다 없으면 빈값
+                        let precip = '';
+                        if (prob != null && prob > 0) precip = `${prob}%`;
+                        else if (amt != null && amt > 0) precip = `${amt}mm`;
+                        return {
+                            time: String(it.aplTm).padStart(2, '0') + '00',
+                            temp: Math.round(it.tmpr),
+                            precip,
+                            desc: it.wetrTxt || '',
+                            icon: wetrIcon(it.wetrTxt),
+                        };
+                    });
             } catch (e) { /* noop */ }
         }
 
