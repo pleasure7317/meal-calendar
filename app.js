@@ -778,6 +778,8 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 // ==================== Food Search Panel ====================
 function openFoodSearch(foodName) {
+    // 메뉴에 붙은 (NNNkcal) 표기는 검색·표시에서 제거
+    foodName = foodName.replace(/\s*\(\s*\d+\s*kcal\s*\)\s*$/i, '').trim();
     const panel = document.getElementById('foodPanelOverlay');
     document.getElementById('foodName').textContent = `🍳 ${foodName}`;
 
