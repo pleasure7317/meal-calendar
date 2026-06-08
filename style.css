@@ -1194,7 +1194,12 @@ body {
     }
 
     .today-meals {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .today-meal-card {
+        padding: 14px 6px;
     }
 
     .calendar-day {
@@ -1239,6 +1244,27 @@ body {
 }
 
 @media (max-width: 480px) {
+    .today-meals {
+        gap: 6px;
+    }
+
+    .today-meal-card {
+        padding: 12px 4px;
+    }
+
+    .meal-time-badge {
+        font-size: 0.7rem;
+        padding: 2px 8px;
+    }
+
+    .meal-time-icon {
+        font-size: 1.4rem;
+    }
+
+    .today-meal-content {
+        font-size: 0.75rem;
+    }
+
     .calendar-day {
         min-height: 60px;
         padding: 4px;
