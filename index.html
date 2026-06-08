@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260609b">
+    <link rel="stylesheet" href="style.css?v=20260609c">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -22,9 +22,12 @@
                 <div class="english-label">🏨 오늘의 영어 구문 <span class="english-cat" id="englishCat"></span></div>
                 <p class="english-en" id="englishEn"></p>
                 <p class="english-ko" id="englishKo"></p>
-                <button class="english-speak" id="englishSpeak">🔊 발음 듣기</button>
             </div>
             <div class="english-btns">
+                <button class="english-note-btn speak" id="englishSpeak">
+                    <span class="note-icon">🔊</span>
+                    <span class="note-label">발음 듣기</span>
+                </button>
                 <button class="english-note-btn study-more" id="studyMoreBtn">
                     <span class="note-icon">✏️</span>
                     <span class="note-label">한 개 더</span>
