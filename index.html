@@ -72,7 +72,7 @@
                     <h2 class="calendar-month" id="calendarMonth"></h2>
                     <button class="nav-btn" id="nextMonth">▶</button>
                 </div>
-                <button class="btn-api-key" id="apiKeyToggle">🔑 API 설정</button>
+                <div></div>
             </div>
             <div class="calendar-weekdays">
                 <div class="weekday sun">일</div>
@@ -144,29 +144,6 @@
         </div>
     </div>
 
-    <!-- API Key Modal -->
-    <div class="modal-overlay" id="apiKeyOverlay">
-        <div class="modal api-key-modal">
-            <button class="modal-close" id="apiKeyClose">✕</button>
-            <h3 class="register-title">🔑 API 키 설정</h3>
-            <p class="register-desc">AI 분석을 위한 API 키를 입력해주세요</p>
-            <div class="register-step">
-                <label class="register-label">AI 서비스</label>
-                <select id="apiProvider" class="period-input" style="width:100%;">
-                    <option value="openai">OpenAI (GPT-4o)</option>
-                    <option value="claude">Claude (Anthropic)</option>
-                </select>
-            </div>
-            <div class="register-step">
-                <label class="register-label">API 키</label>
-                <input type="password" id="apiKeyInput" placeholder="API 키를 입력하세요" class="period-input" style="width:100%;">
-            </div>
-            <p class="api-key-hint">API 키는 이 브라우저에만 저장돼요</p>
-            <div class="register-actions">
-                <button class="btn-primary" id="saveApiKey">💾 저장하기</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Meal Detail Modal -->
     <div class="modal-overlay" id="modalOverlay">
