@@ -930,10 +930,57 @@ function weatherDesc(sky, pty) {
     return '';
 }
 
-async function loadWeather() {
+function renderWeather(data) {
     const wrap = document.getElementById('weatherHours');
     const nowEl = document.getElementById('weatherNow');
+    if (!wrap || !data) return false;
+    const hours = data.hours || [];
+
+    // 현재 시각 이후의 시간만 (지난 시간은 제외)
+    const k = new Date(Date.now() + 9 * 3600 * 1000);
+    const nowHHMM = String(k.getUTCHours()).padStart(2, '0') + '00';
+    let upcoming = hours.filter(h => h.time >= nowHHMM);
+    if (upcoming.length === 0) upcoming = hours;
+    if (upcoming.length === 0) return false;
+
+    // 현재 요약: 네이버 현재 관측값 우선, 없으면 가장 가까운 시간
+    const near = upcoming[0];
+    if (nowEl) {
+        const c = (data.current && data.current.temp != null) ? data.current : near;
+        if (c) nowEl.textContent = `지금 ${c.icon || '🌤️'} ${c.temp}° ${c.desc || ''}`;
+    }
+
+    wrap.innerHTML = upcoming.map(h => {
+        const hh = parseInt(h.time.slice(0, 2), 10);
+        return `
+            <div class="weather-card">
+                <span class="weather-time">${hh}시</span>
+                <span class="weather-icon">${h.icon || '🌤️'}</span>
+                <span class="weather-temp">${h.temp}°</span>
+                <span class="weather-pop">💧${h.pop}%</span>
+            </div>`;
+    }).join('');
+    return true;
+}
+
+async function loadWeather() {
+    const wrap = document.getElementById('weatherHours');
     if (!wrap) return;
+
+    // 1) 브라우저에 저장된 최근 날씨가 있으면 즉시 표시 (체감 속도 ↑)
+    let shownFromCache = false;
+    try {
+        const cached = JSON.parse(localStorage.getItem('weatherCache') || 'null');
+        const todayStr = (() => {
+            const k = new Date(Date.now() + 9 * 3600 * 1000);
+            return `${k.getUTCFullYear()}${String(k.getUTCMonth() + 1).padStart(2, '0')}${String(k.getUTCDate()).padStart(2, '0')}`;
+        })();
+        if (cached && cached.date === todayStr) {
+            shownFromCache = renderWeather(cached);
+        }
+    } catch (e) { /* noop */ }
+
+    // 2) 최신 데이터로 갱신
     try {
         const res = await fetch('/api/weather');
         if (!res.ok) {
@@ -941,46 +988,15 @@ async function loadWeather() {
             throw new Error(e.error || `오류 (${res.status})`);
         }
         const data = await res.json();
-        const hours = data.hours || [];
-
-        // 현재 시각 이후의 시간만 (지난 시간은 제외)
-        const nowHHMM = (() => {
-            const k = new Date(Date.now() + 9 * 3600 * 1000);
-            return String(k.getUTCHours()).padStart(2, '0') + '00';
-        })();
-        let upcoming = hours.filter(h => h.time >= nowHHMM);
-        if (upcoming.length === 0) upcoming = hours;
-
-        if (upcoming.length === 0) {
+        try { localStorage.setItem('weatherCache', JSON.stringify(data)); } catch (e) { /* noop */ }
+        if (!renderWeather(data) && !shownFromCache) {
             wrap.innerHTML = '<p class="weather-loading">날씨 정보가 없어요</p>';
-            return;
         }
-
-        // 현재 요약: 네이버 현재 관측값 우선, 없으면 가장 가까운 시간
-        const near = upcoming[0];
-        if (nowEl) {
-            const c = (data.current && data.current.temp != null) ? data.current : near;
-            if (c) {
-                const icon = c.icon || '🌤️';
-                const desc = c.desc || '';
-                nowEl.textContent = `지금 ${icon} ${c.temp}° ${desc}`;
-            }
-        }
-
-        wrap.innerHTML = upcoming.map(h => {
-            const hh = parseInt(h.time.slice(0, 2), 10);
-            const label = `${hh}시`;
-            return `
-                <div class="weather-card">
-                    <span class="weather-time">${label}</span>
-                    <span class="weather-icon">${h.icon || '🌤️'}</span>
-                    <span class="weather-temp">${h.temp}°</span>
-                    <span class="weather-pop">💧${h.pop}%</span>
-                </div>`;
-        }).join('');
     } catch (err) {
         console.error('날씨 로드 실패:', err);
-        wrap.innerHTML = `<p class="weather-loading">날씨를 불러오지 못했어요 😢</p>`;
+        if (!shownFromCache) {
+            wrap.innerHTML = `<p class="weather-loading">날씨를 불러오지 못했어요 😢</p>`;
+        }
     }
 }
 
