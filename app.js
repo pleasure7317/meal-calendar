@@ -18,7 +18,7 @@ const FLUENT3D = new Set([
     '1f305','1f319','1f324','1f326','1f327','1f328','1f338','1f35a','1f373','1f37d',
     '1f389','1f3ac','1f3e8','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4cc','1f4d2',
     '1f4d6','1f4d7','1f4f7','1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624',
-    '1f50a','1f62e-200d-1f4a8','1f634','1f912','1f917','1f929','1f963','1f969','1f970',
+    '1f504','1f50a','1f62e-200d-1f4a8','1f634','1f912','1f917','1f929','1f963','1f969','1f970',
     '1f97a','1f9c8','2600','2601','26a0','26c5','270f','2728','2744'
 ]);
 
@@ -1481,7 +1481,7 @@ function scrapEnglish() {
     } else {
         scraps.push({ idx: cur.idx, date: getMealKey(new Date()) });
         saveScraps(scraps);
-        showToast('표현 노트에 스크랩했어요! 📌');
+        showToast('스크랩북에 저장했어요! 📌');
     }
     updateScrapButton();
 }
