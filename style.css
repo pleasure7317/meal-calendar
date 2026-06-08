@@ -232,6 +232,12 @@ body::before {
 .english-note-btn .note-icon {
     font-size: 1.25rem;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.english-note-btn .note-icon img.emoji {
+    vertical-align: middle;
+    margin: 0;
 }
 
 .english-note-btn .note-label {
@@ -241,10 +247,10 @@ body::before {
     color: var(--text-light);
 }
 
-/* 색은 글자에만 은은하게 (배경은 모두 같은 간유리) */
-.english-note-btn.speak .note-label { color: #3f72a3; }
-.english-note-btn.study-more .note-label { color: #b06a3e; }
-.english-note-btn#openEnglishNote .note-label { color: #8d5a9c; }
+/* 글자 색은 셋 다 동일하게 (발음 듣기 색 기준) */
+.english-note-btn.speak .note-label,
+.english-note-btn.study-more .note-label,
+.english-note-btn#openEnglishNote .note-label { color: #3f72a3; }
 
 /* 표현 노트 모달 리스트 */
 .english-note-list {
