@@ -1473,7 +1473,6 @@ function updateEnglishPhrase() {
     const catEl = document.getElementById('englishCat');
     if (catEl) catEl.textContent = `(${PHRASE_CATS[cur.idx] || ''})`;
     updateScrapButton();
-    prefetchTTS(p.en); // 미리 음성 받아두기 → 발음 듣기 즉시
 }
 
 // "한 개 더" → 다른 표현으로 바꿈 (노트에는 안 들어감, 스크랩해야 들어감)
@@ -1545,49 +1544,38 @@ function ttsAudioEl() {
     return _ttsAudio;
 }
 
-// 생성된 음성 캐시 (text -> blob URL) : 같은 문장 즉시 재생
-const _ttsCache = new Map();
-let _ttsInflight = new Map(); // 진행 중인 요청 중복 방지
-
-async function fetchTTS(text) {
-    if (_ttsCache.has(text)) return _ttsCache.get(text);
-    if (_ttsInflight.has(text)) return _ttsInflight.get(text);
-    const p = (async () => {
-        // GET 방식 → 같은 문장은 CDN/브라우저 캐시되어 재호출·재과금 없음
-        const res = await fetch('/api/tts?text=' + encodeURIComponent(text));
-        if (!res.ok) throw new Error('tts ' + res.status);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        _ttsCache.set(text, url);
-        _ttsInflight.delete(text);
-        return url;
-    })().catch(e => { _ttsInflight.delete(text); throw e; });
-    _ttsInflight.set(text, p);
-    return p;
+// 표현 → 정적 mp3 파일명 키 (생성 스크립트와 동일한 해시)
+function ttsKey(str) {
+    let h = 5381;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) >>> 0;
+    return h.toString(16);
 }
 
-// 표현이 화면에 뜨면 미리 음성을 받아둠 → 누르면 즉시 재생
-function prefetchTTS(text) {
-    if (!text || _ttsCache.has(text)) return;
-    fetchTTS(text).catch(() => {});
-}
-
-// 서버(OpenAI) 음성 재생 (캐시되어 있으면 즉시)
+// 서버(OpenAI) 음성 — 정적 파일이 없는 새 표현용 폴백
 async function serverSpeak(text) {
     try {
-        const url = await fetchTTS(text);
+        const res = await fetch('/api/tts?text=' + encodeURIComponent(text));
+        if (!res.ok) return false;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
         const a = ttsAudioEl();
         a.src = url;
-        a.currentTime = 0;
+        a.onended = () => URL.revokeObjectURL(url);
         await a.play();
         return true;
     } catch (e) { return false; }
 }
 
-// 발음 듣기: 항상 OpenAI 음성(nova)으로 고정. 실패 시 한 번 더 시도 (목소리 일관성 유지)
+// 발음 듣기: 미리 만들어둔 정적 mp3 재생 (영구·무료·즉시), 없으면 서버 생성으로 폴백
 async function speakEnglish(text) {
     if (!text) return;
-    if (await serverSpeak(text)) return;
+    try {
+        const a = ttsAudioEl();
+        a.src = 'audio/' + ttsKey(text) + '.mp3';
+        a.currentTime = 0;
+        await a.play();
+        return;
+    } catch (e) { /* 파일 없음/실패 → 폴백 */ }
     if (await serverSpeak(text)) return;
     showToast('발음을 재생하지 못했어요 😢');
 }
