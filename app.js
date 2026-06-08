@@ -16,10 +16,10 @@ try {
 // 로컬에 받아둔 Microsoft Fluent 3D 이모지 목록 (codepoint 키)
 const FLUENT3D = new Set([
     '1f305','1f319','1f324','1f326','1f327','1f328','1f338','1f35a','1f373','1f37d',
-    '1f389','1f3ac','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4d7',
-    '1f4f7','1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624','1f62e-200d-1f4a8',
-    '1f634','1f912','1f917','1f929','1f963','1f969','1f970','1f97a','1f9c8','2600',
-    '2601','26a0','26c5','270f','2728','2744'
+    '1f389','1f3ac','1f3e8','1f446','1f495','1f497','1f4a7','1f4aa','1f4ca','1f4d2',
+    '1f4d6','1f4d7','1f4f7','1f4f8','1f50d','1f525','1f5d1','1f60a','1f622','1f624',
+    '1f62e-200d-1f4a8','1f634','1f912','1f917','1f929','1f963','1f969','1f970','1f97a',
+    '1f9c8','2600','2601','26a0','26c5','270f','2728','2744'
 ]);
 
 let _emojiTimer = null;
@@ -924,6 +924,91 @@ function updateDday() {
     el.textContent = `입사 D+${days}`;
 }
 
+// ==================== 오늘의 영어 구문 (호텔리어 표현) ====================
+const ENGLISH_PHRASES = [
+    { en: "How may I assist you today?", ko: "오늘 무엇을 도와드릴까요?" },
+    { en: "Welcome to our hotel. May I have your name, please?", ko: "저희 호텔에 오신 것을 환영합니다. 성함을 말씀해 주시겠어요?" },
+    { en: "May I have your reservation number, please?", ko: "예약 번호를 알려주시겠어요?" },
+    { en: "Would you like a city view or an ocean view room?", ko: "시티뷰 객실과 오션뷰 객실 중 어느 것을 원하세요?" },
+    { en: "Check-in is at 3 PM and check-out is at noon.", ko: "체크인은 오후 3시, 체크아웃은 정오입니다." },
+    { en: "May I see your passport, please?", ko: "여권을 보여주시겠어요?" },
+    { en: "Here is your key card. Your room is on the 7th floor.", ko: "여기 키카드입니다. 객실은 7층에 있습니다." },
+    { en: "May I help you with your luggage?", ko: "짐을 들어드릴까요?" },
+    { en: "Breakfast is served from 7 to 10 in the main restaurant.", ko: "조식은 메인 레스토랑에서 7시부터 10시까지 제공됩니다." },
+    { en: "Is there anything else I can help you with?", ko: "그 밖에 도와드릴 일이 있을까요?" },
+    { en: "I'm terribly sorry for the inconvenience.", ko: "불편을 드려 대단히 죄송합니다." },
+    { en: "Let me check that for you right away.", ko: "바로 확인해 드리겠습니다." },
+    { en: "Your room will be ready shortly.", ko: "객실이 곧 준비될 예정입니다." },
+    { en: "Would you like a wake-up call in the morning?", ko: "아침에 모닝콜을 원하시나요?" },
+    { en: "How was your stay with us?", ko: "저희 호텔에서의 숙박은 어떠셨나요?" },
+    { en: "Please let me know if you need extra towels.", ko: "수건이 더 필요하시면 말씀해 주세요." },
+    { en: "The Wi-Fi password is on the back of your key card.", ko: "와이파이 비밀번호는 키카드 뒷면에 있습니다." },
+    { en: "May I upgrade you to a suite?", ko: "스위트룸으로 업그레이드해 드려도 될까요?" },
+    { en: "Would you prefer a smoking or non-smoking room?", ko: "흡연 객실과 금연 객실 중 어느 것을 원하세요?" },
+    { en: "I'll arrange a taxi for you.", ko: "택시를 준비해 드리겠습니다." },
+    { en: "Enjoy your stay with us!", ko: "즐거운 시간 보내세요!" },
+    { en: "Could you please fill out this form?", ko: "이 양식을 작성해 주시겠어요?" },
+    { en: "How many nights will you be staying?", ko: "며칠 밤 묵으실 예정인가요?" },
+    { en: "Complimentary breakfast is included in your stay.", ko: "조식이 무료로 포함되어 있습니다." },
+    { en: "Allow me to show you to your room.", ko: "객실로 안내해 드리겠습니다." },
+    { en: "Would you like to leave your luggage with us?", ko: "짐을 저희에게 맡기시겠어요?" },
+    { en: "I'll send someone up to your room right away.", ko: "바로 객실로 직원을 보내드리겠습니다." },
+    { en: "Your total comes to 150 dollars.", ko: "총 금액은 150달러입니다." },
+    { en: "How would you like to pay?", ko: "어떻게 결제하시겠어요?" },
+    { en: "Could I have your signature here, please?", ko: "여기에 서명해 주시겠어요?" },
+    { en: "The pool is open from 6 AM to 10 PM.", ko: "수영장은 오전 6시부터 오후 10시까지 운영합니다." },
+    { en: "I do apologize for the wait.", ko: "기다리게 해 드려 죄송합니다." },
+    { en: "We hope to see you again soon.", ko: "다시 뵙기를 바랍니다." },
+    { en: "Would you like a late check-out?", ko: "레이트 체크아웃을 원하시나요?" },
+    { en: "Please don't hesitate to call the front desk.", ko: "언제든 편하게 프런트로 전화 주세요." },
+    { en: "Your room has been upgraded free of charge.", ko: "객실이 무료로 업그레이드되었습니다." },
+    { en: "Can I get you anything from the bar?", ko: "바에서 뭐 좀 가져다 드릴까요?" },
+    { en: "Let me write that down for you.", ko: "제가 적어드리겠습니다." },
+    { en: "The elevators are just around the corner.", ko: "엘리베이터는 모퉁이를 돌면 바로 있습니다." },
+    { en: "Thank you for choosing our hotel.", ko: "저희 호텔을 선택해 주셔서 감사합니다." },
+];
+
+// 시작일(이 날부터 하루에 하나씩 쌓임)
+const ENGLISH_START = new Date(2026, 5, 8); // 2026-06-08
+
+function englishDayIndex() {
+    const now = new Date();
+    const s = new Date(ENGLISH_START.getFullYear(), ENGLISH_START.getMonth(), ENGLISH_START.getDate());
+    const n = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.max(0, Math.floor((n - s) / 86400000));
+}
+
+function updateEnglishPhrase() {
+    const enEl = document.getElementById('englishEn');
+    const koEl = document.getElementById('englishKo');
+    if (!enEl || !koEl) return;
+    const p = ENGLISH_PHRASES[englishDayIndex() % ENGLISH_PHRASES.length];
+    enEl.textContent = `"${p.en}"`;
+    koEl.textContent = p.ko;
+}
+
+function openEnglishNote() {
+    const listEl = document.getElementById('englishNoteList');
+    const overlay = document.getElementById('englishOverlay');
+    if (!listEl || !overlay) return;
+
+    // 지금까지 배운 개수 (시작일부터 오늘까지, 표현 수 만큼만)
+    const learned = Math.min(englishDayIndex() + 1, ENGLISH_PHRASES.length);
+    let html = '';
+    for (let i = learned - 1; i >= 0; i--) {
+        const p = ENGLISH_PHRASES[i];
+        const isToday = i === (englishDayIndex() % ENGLISH_PHRASES.length) && i === learned - 1;
+        html += `
+            <div class="english-note-item${isToday ? ' today' : ''}">
+                <div class="note-day">Day ${i + 1}${isToday ? ' · 오늘' : ''}</div>
+                <p class="note-en">"${p.en}"</p>
+                <p class="note-ko">${p.ko}</p>
+            </div>`;
+    }
+    listEl.innerHTML = html;
+    overlay.classList.add('show');
+}
+
 // ==================== Weather ====================
 function weatherIcon(sky, pty) {
     const p = parseInt(pty, 10);
@@ -1025,8 +1110,19 @@ async function loadWeather() {
     }
 }
 
+// 표현 노트 버튼/모달
+(function setupEnglishNote() {
+    const btn = document.getElementById('openEnglishNote');
+    const overlay = document.getElementById('englishOverlay');
+    const close = document.getElementById('englishClose');
+    if (btn) btn.addEventListener('click', openEnglishNote);
+    if (close) close.addEventListener('click', () => overlay.classList.remove('show'));
+    if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });
+})();
+
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
+    try { updateEnglishPhrase(); } catch (e) { console.warn('영어 구문 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
     try {
         loadWeather();

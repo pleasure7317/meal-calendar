@@ -109,9 +109,8 @@ export default async function handler(req, res) {
             return res.status(502).json({ error: '네이버 날씨 데이터를 파싱하지 못했어요' });
         }
 
-        // 엣지 캐시 30분 + 만료 후에도 하루 동안 캐시본 즉시 응답하며 백그라운드 갱신
-        // (크론이 30분마다 미리 데워둠 → 사실상 항상 즉시)
-        res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=86400');
+        // 엣지 캐시 10분 + 만료 후에도 하루 동안 캐시본 즉시 응답하며 백그라운드 갱신
+        res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate=86400');
         return res.status(200).json({ date: todayStr, location: '홍천', source: 'naver', current, hours });
     } catch (err) {
         return res.status(500).json({ error: err.message });

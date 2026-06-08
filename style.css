@@ -97,6 +97,123 @@ body::before {
     margin: 0 auto;
 }
 
+/* ===== 오늘의 영어 구문 ===== */
+.english-section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 6px 20px 14px;
+}
+
+.english-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+}
+
+.english-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.english-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 6px;
+}
+
+.english-en {
+    font-family: 'Gowun Batang', serif;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.english-ko {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-top: 5px;
+    line-height: 1.4;
+}
+
+.english-note-btn {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    box-shadow: 0 3px 10px rgba(186, 104, 200, 0.3);
+}
+
+.english-note-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(186, 104, 200, 0.4);
+}
+
+.english-note-btn .note-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.english-note-btn .note-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* 표현 노트 모달 리스트 */
+.english-note-list {
+    padding: 8px 20px 24px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.english-note-item {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--primary);
+}
+
+.english-note-item.today {
+    border-left-color: var(--secondary);
+    background: linear-gradient(135deg, rgba(252,228,236,0.6), rgba(232,234,246,0.6));
+}
+
+.english-note-item .note-day {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin-bottom: 5px;
+}
+
+.english-note-item .note-en {
+    font-family: 'Gowun Batang', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+.english-note-item .note-ko {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
 /* ===== Weather Section ===== */
 .weather-section {
     background: transparent;
@@ -1427,6 +1544,7 @@ body::before {
 
     .reset-modal,
     .register-modal,
+    .english-modal,
     #mealModal {
         border-radius: var(--radius);
     }
