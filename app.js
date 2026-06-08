@@ -267,10 +267,30 @@ async function restoreMood() {
 }
 
 // ==================== Today's Menu ====================
+let todayViewOffset = 0; // 0=오늘, +1=내일, -1=어제 ...
+
+function todayViewDate() {
+    const d = new Date();
+    d.setDate(d.getDate() + todayViewOffset);
+    return d;
+}
+
+function todayMenuLabelText() {
+    if (todayViewOffset === 0) return '오늘의 메뉴';
+    if (todayViewOffset === 1) return '내일 메뉴';
+    if (todayViewOffset === -1) return '어제 메뉴';
+    if (todayViewOffset === 2) return '모레 메뉴';
+    const d = todayViewDate();
+    return `${d.getMonth() + 1}/${d.getDate()} 메뉴`;
+}
+
 function updateTodayMenu() {
     const data = loadMeals();
-    const todayKey = getMealKey(new Date());
-    const today = data[todayKey];
+    const viewDate = todayViewDate();
+    const dayMeals = data[getMealKey(viewDate)];
+
+    const labelEl = document.getElementById('todayMenuLabel');
+    if (labelEl) labelEl.textContent = todayMenuLabelText();
 
     const types = [
         { key: 'breakfast', el: 'todayBreakfast' },
@@ -280,8 +300,8 @@ function updateTodayMenu() {
 
     types.forEach(({ key, el }) => {
         const container = document.getElementById(el);
-        if (today && today[key]) {
-            const items = today[key].split('\n').filter(Boolean);
+        if (dayMeals && dayMeals[key]) {
+            const items = dayMeals[key].split('\n').filter(Boolean);
             container.innerHTML = items.map(item =>
                 `<div class="menu-item" onclick="openFoodSearch('${item.replace(/'/g, "\\'")}')">${withCalorie(item)}</div>`
             ).join('');
@@ -290,6 +310,32 @@ function updateTodayMenu() {
         }
     });
 }
+
+// 오늘의 메뉴 좌우 스와이프 → 전날/다음날
+let _todaySwiped = false;
+(function setupTodaySwipe() {
+    const el = document.getElementById('todayMeals');
+    if (!el) return;
+    let startX = 0, startY = 0, tracking = false;
+    el.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        tracking = true;
+        _todaySwiped = false;
+    }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+            _todaySwiped = true; // 뒤따르는 click(상세팝업) 방지용
+            todayViewOffset += (dx < 0 ? 1 : -1);
+            updateTodayMenu();
+            el.classList.remove('swipe-anim'); void el.offsetWidth; el.classList.add('swipe-anim');
+        }
+    }, { passive: true });
+})();
 
 
 // ==================== Register Modal ====================
@@ -849,14 +895,15 @@ function openDayModal(date, key, tab = 'breakfast') {
     modal.classList.add('show');
 }
 
-// 오늘의 메뉴 카드(조식/중식/석식) 클릭 → 해당 탭으로 상세 팝업
+// 오늘의 메뉴 카드(조식/중식/석식) 클릭 → 해당 탭으로 상세 팝업 (보고 있는 날짜 기준)
 [['breakfast-card', 'breakfast'], ['lunch-card', 'lunch'], ['dinner-card', 'dinner']].forEach(([cls, tab]) => {
     const card = document.querySelector('.' + cls);
     if (card) {
         card.style.cursor = 'pointer';
         card.addEventListener('click', () => {
-            const today = new Date();
-            openDayModal(today, getMealKey(today), tab);
+            if (_todaySwiped) { _todaySwiped = false; return; } // 스와이프 직후 클릭 무시
+            const d = todayViewDate();
+            openDayModal(d, getMealKey(d), tab);
         });
     }
 });

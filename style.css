@@ -565,6 +565,14 @@ body::before {
     white-space: nowrap;
 }
 
+.today-meals.swipe-anim {
+    animation: mealFade 0.25s ease;
+}
+@keyframes mealFade {
+    from { opacity: 0.35; }
+    to { opacity: 1; }
+}
+
 .today-meals {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
