@@ -1157,6 +1157,10 @@ body::before {
     gap: 6px;
 }
 
+.calendar-grid.swipe-anim {
+    animation: mealFade 0.25s ease;
+}
+
 .calendar-day {
     background: white;
     border-radius: var(--radius-sm);

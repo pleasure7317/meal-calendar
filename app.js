@@ -811,17 +811,43 @@ function initCalendar() {
     renderCalendar();
 }
 
-document.getElementById('prevMonth').addEventListener('click', () => {
+function goPrevMonth() {
     currentMonth--;
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     renderCalendar();
-});
-
-document.getElementById('nextMonth').addEventListener('click', () => {
+}
+function goNextMonth() {
     currentMonth++;
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
-});
+}
+document.getElementById('prevMonth').addEventListener('click', goPrevMonth);
+document.getElementById('nextMonth').addEventListener('click', goNextMonth);
+
+// 달력 좌우 스와이프 → 이전/다음 달
+let _calSwiped = false;
+(function setupCalendarSwipe() {
+    const el = document.getElementById('calendarGrid');
+    if (!el) return;
+    let startX = 0, startY = 0, tracking = false;
+    el.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        tracking = true;
+        _calSwiped = false;
+    }, { passive: true });
+    el.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) {
+            _calSwiped = true; // 뒤따르는 셀 클릭 방지
+            if (dx < 0) goNextMonth(); else goPrevMonth();
+            el.classList.remove('swipe-anim'); void el.offsetWidth; el.classList.add('swipe-anim');
+        }
+    }, { passive: true });
+})();
 
 function renderCalendar() {
     document.getElementById('calendarMonth').textContent =
@@ -870,7 +896,10 @@ function renderCalendar() {
             <div class="day-meals">${mealsHtml}</div>
         `;
 
-        cell.addEventListener('click', () => openDayModal(date, key));
+        cell.addEventListener('click', () => {
+            if (_calSwiped) { _calSwiped = false; return; } // 스와이프 직후 클릭 무시
+            openDayModal(date, key);
+        });
         grid.appendChild(cell);
     }
 }
