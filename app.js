@@ -77,7 +77,7 @@ async function loadMoodFromDB(dateKey) {
             .from('moods')
             .select('mood')
             .eq('date_key', dateKey)
-            .single();
+            .maybeSingle();
         if (error || !data) return null;
         return data.mood;
     } catch { return null; }
