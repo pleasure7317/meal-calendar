@@ -153,27 +153,46 @@ const calorieDB = {
     '토스트': 250, '빵': 200, '우유': 130, '주스': 100, '커피': 5, '수프': 150,
 };
 
+// 메뉴 항목에서 영양정보 파싱: { kcal, carbs, protein, fat }
+function parseItemNutrition(item) {
+    if (!item) return {};
+    const num = (re) => { const m = item.match(re); return m ? parseInt(m[1], 10) : null; };
+    return {
+        kcal: num(/(\d+)\s*kcal/i),
+        carbs: num(/탄[^\d]*(\d+)\s*g/),
+        protein: num(/단[^\d]*(\d+)\s*g/),
+        fat: num(/지[^\d]*(\d+)\s*g/),
+    };
+}
+
+// 메뉴 이름만 (뒤쪽 괄호 영양정보 제거)
+function itemName(item) {
+    if (!item) return '';
+    return item.replace(/\s*\([^)]*\)\s*$/, '').trim();
+}
+
 // 메뉴 한 개의 칼로리 추정 (숫자 반환, 없으면 null)
 function itemCalorie(item) {
     if (!item) return null;
-    // AI가 붙여준 (NNNkcal) 숫자가 있으면 그걸 우선 사용
-    const m = item.match(/\((\d+)\s*kcal\)/i);
+    // AI가 붙여준 칼로리 숫자가 있으면 그걸 우선 사용
+    const m = item.match(/(\d+)\s*kcal/i);
     if (m) return parseInt(m[1], 10);
+    const name = itemName(item);
     for (const [food, cal] of Object.entries(calorieDB)) {
-        if (item.includes(food)) return cal;
+        if (name.includes(food)) return cal;
     }
     return null;
 }
 
-// 메뉴 텍스트 뒤에 (NNNkcal) 붙여서 반환
+// 메뉴 텍스트를 "이름 (NNNkcal)" 형태로 표시 (탄/단/지는 화면에 숨김 → 패널에서만 보임)
 function withCalorie(item) {
-    // AI가 이미 (NNNkcal)을 붙여준 경우엔 그 부분만 스타일링
-    const m = item.match(/^(.*?)\s*\((\d+)\s*kcal\)\s*$/i);
-    if (m) {
-        return `${m[1]} <span class="item-cal">(${m[2]}kcal)</span>`;
+    const name = itemName(item);
+    const kcalM = item.match(/(\d+)\s*kcal/i);
+    if (kcalM) {
+        return `${name} <span class="item-cal">(${kcalM[1]}kcal)</span>`;
     }
     const cal = itemCalorie(item);
-    return cal ? `${item} <span class="item-cal">(${cal}kcal)</span>` : item;
+    return cal ? `${name} <span class="item-cal">(${cal}kcal)</span>` : name;
 }
 
 function estimateCalories(menuText) {
@@ -819,23 +838,28 @@ document.getElementById('modalOverlay').addEventListener('click', e => {
 
 // ==================== Food Search Panel ====================
 function openFoodSearch(foodName) {
-    // AI가 붙여준 (NNNkcal) 값을 먼저 추출 (있으면 우선 사용)
-    const calMatch = foodName.match(/\((\d+)\s*kcal\)/i);
-    let cal = calMatch ? parseInt(calMatch[1], 10) : null;
-    // 메뉴에 붙은 (NNNkcal) 표기는 검색·표시에서 제거
-    foodName = foodName.replace(/\s*\(\s*\d+\s*kcal\s*\)\s*$/i, '').trim();
+    // AI가 붙여준 영양정보(칼로리·탄·단·지) 추출
+    const nut = parseItemNutrition(foodName);
+    // 메뉴 이름만 (괄호 영양정보 제거)
+    foodName = itemName(foodName);
     const panel = document.getElementById('foodPanelOverlay');
     document.getElementById('foodName').textContent = `🍳 ${foodName}`;
 
     const results = document.getElementById('foodSearchResults');
     const links = document.getElementById('foodLinks');
 
-    // AI 칼로리가 없으면 내장 DB에서 찾기
+    // 칼로리: AI값 우선, 없으면 내장 DB
+    let cal = nut.kcal;
     if (cal == null) {
         for (const [food, c] of Object.entries(calorieDB)) {
             if (foodName.includes(food)) { cal = c; break; }
         }
     }
+    // 탄/단/지: AI값 우선, 없으면 칼로리에서 일반 비율로 추정
+    const carbs = nut.carbs != null ? nut.carbs : (cal ? Math.round(cal * 0.5 / 4) : null);
+    const protein = nut.protein != null ? nut.protein : (cal ? Math.round(cal * 0.25 / 4) : null);
+    const fat = nut.fat != null ? nut.fat : (cal ? Math.round(cal * 0.25 / 9) : null);
+    const g = (v) => (v != null ? v + 'g' : '-');
 
     results.innerHTML = `
         <div class="food-info-card">
@@ -849,17 +873,17 @@ function openFoodSearch(foodName) {
                 <div class="nutrition-item">
                     <span class="nut-icon">🍚</span>
                     <span class="nut-label">탄수화물</span>
-                    <span class="nut-value">${cal ? Math.round(cal * 0.5 / 4) + 'g' : '-'}</span>
+                    <span class="nut-value">${g(carbs)}</span>
                 </div>
                 <div class="nutrition-item">
                     <span class="nut-icon">🥩</span>
                     <span class="nut-label">단백질</span>
-                    <span class="nut-value">${cal ? Math.round(cal * 0.25 / 4) + 'g' : '-'}</span>
+                    <span class="nut-value">${g(protein)}</span>
                 </div>
                 <div class="nutrition-item">
                     <span class="nut-icon">🧈</span>
                     <span class="nut-label">지방</span>
-                    <span class="nut-value">${cal ? Math.round(cal * 0.25 / 9) + 'g' : '-'}</span>
+                    <span class="nut-value">${g(fat)}</span>
                 </div>
             </div>
         </div>
