@@ -1,4 +1,7 @@
 {
+  "crons": [
+    { "path": "/api/weather", "schedule": "*/30 * * * *" }
+  ],
   "headers": [
     {
       "source": "/",
