@@ -1553,11 +1553,8 @@ async function fetchTTS(text) {
     if (_ttsCache.has(text)) return _ttsCache.get(text);
     if (_ttsInflight.has(text)) return _ttsInflight.get(text);
     const p = (async () => {
-        const res = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text }),
-        });
+        // GET 방식 → 같은 문장은 CDN/브라우저 캐시되어 재호출·재과금 없음
+        const res = await fetch('/api/tts?text=' + encodeURIComponent(text));
         if (!res.ok) throw new Error('tts ' + res.status);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);

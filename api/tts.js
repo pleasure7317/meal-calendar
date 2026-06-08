@@ -1,6 +1,7 @@
 // OpenAI TTS - 자연스러운 영어 발음 음성 생성
+// GET(?text=)으로 호출하면 같은 문장은 CDN/브라우저 캐시(7일)되어 재호출·재과금 없음
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
+    if (req.method !== 'POST' && req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     const apiKey = process.env.OPENAI_API_KEY;
@@ -8,7 +9,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'OpenAI API key not configured' });
     }
     try {
-        const { text } = req.body || {};
+        const text = req.method === 'GET' ? (req.query && req.query.text) : (req.body && req.body.text);
         if (!text || !text.trim()) {
             return res.status(400).json({ error: 'No text provided' });
         }
