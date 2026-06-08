@@ -1587,11 +1587,12 @@ async function serverSpeak(text) {
     } catch (e) { return false; }
 }
 
-// 발음 듣기: 항상 OpenAI 자연 음성, 실패 시 브라우저 음성 폴백
+// 발음 듣기: 항상 OpenAI 음성(nova)으로 고정. 실패 시 한 번 더 시도 (목소리 일관성 유지)
 async function speakEnglish(text) {
     if (!text) return;
     if (await serverSpeak(text)) return;
-    browserSpeak(text);
+    if (await serverSpeak(text)) return;
+    showToast('발음을 재생하지 못했어요 😢');
 }
 
 // 첫 사용자 제스처에서 오디오/음성 엔진을 미리 풀어둠 (iOS 차단·사파리 지연 완화)
