@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260608z16">
+    <link rel="stylesheet" href="style.css?v=20260608z17">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -54,10 +54,16 @@
                 <p class="english-en" id="englishEn"></p>
                 <p class="english-ko" id="englishKo"></p>
             </div>
-            <button class="english-note-btn" id="openEnglishNote">
-                <span class="note-icon">📒</span>
-                <span class="note-label">표현 노트</span>
-            </button>
+            <div class="english-btns">
+                <button class="english-note-btn study-more" id="studyMoreBtn">
+                    <span class="note-icon">✏️</span>
+                    <span class="note-label">한 개 더</span>
+                </button>
+                <button class="english-note-btn" id="openEnglishNote">
+                    <span class="note-icon">📒</span>
+                    <span class="note-label">표현 노트</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -257,6 +263,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260608z16"></script>
+    <script src="app.js?v=20260608z17"></script>
 </body>
 </html>

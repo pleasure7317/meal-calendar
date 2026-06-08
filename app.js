@@ -966,9 +966,28 @@ const ENGLISH_PHRASES = [
     { en: "Let me write that down for you.", ko: "제가 적어드리겠습니다." },
     { en: "The elevators are just around the corner.", ko: "엘리베이터는 모퉁이를 돌면 바로 있습니다." },
     { en: "Thank you for choosing our hotel.", ko: "저희 호텔을 선택해 주셔서 감사합니다." },
+    { en: "Would you like help making a dinner reservation?", ko: "저녁 식사 예약을 도와드릴까요?" },
+    { en: "Let me transfer you to housekeeping.", ko: "하우스키핑으로 연결해 드리겠습니다." },
+    { en: "Your luggage will be sent up to your room.", ko: "짐은 객실로 올려보내 드리겠습니다." },
+    { en: "Would you care for some water while you wait?", ko: "기다리시는 동안 물 한 잔 드릴까요?" },
+    { en: "I'm afraid we're fully booked tonight.", ko: "죄송하지만 오늘 밤은 만실입니다." },
+    { en: "May I confirm your check-out date?", ko: "체크아웃 날짜를 확인해 드릴까요?" },
+    { en: "The minibar items are charged to your room.", ko: "미니바 이용 요금은 객실로 청구됩니다." },
+    { en: "Please tap your key card to enter the lounge.", ko: "라운지 입장 시 키카드를 태그해 주세요." },
+    { en: "Shall I call housekeeping to clean your room now?", ko: "지금 객실 청소를 요청해 드릴까요?" },
+    { en: "Your reservation is confirmed for two nights.", ko: "예약이 2박으로 확정되었습니다." },
+    { en: "Is this your first time staying with us?", ko: "저희 호텔은 처음이신가요?" },
+    { en: "We offer a complimentary airport shuttle service.", ko: "무료 공항 셔틀 서비스를 제공합니다." },
+    { en: "I'll make a note of your request for a high floor.", ko: "고층 객실 요청을 기록해 두겠습니다." },
+    { en: "Would you like your receipt emailed to you?", ko: "영수증을 이메일로 보내드릴까요?" },
+    { en: "Allow me to escort you to the elevator.", ko: "엘리베이터까지 안내해 드리겠습니다." },
+    { en: "Breakfast can be delivered to your room.", ko: "조식을 객실로 가져다 드릴 수 있습니다." },
+    { en: "Please let us know your estimated arrival time.", ko: "도착 예정 시간을 알려주세요." },
+    { en: "It's been a pleasure serving you.", ko: "모시게 되어 영광이었습니다." },
+    { en: "Would you like me to call a doctor?", ko: "의사를 불러드릴까요?" },
 ];
 
-// 시작일(이 날부터 하루에 하나씩 쌓임)
+// 시작일(이 날부터 하루에 하나씩 자동으로 쌓임)
 const ENGLISH_START = new Date(2026, 5, 8); // 2026-06-08
 
 function englishDayIndex() {
@@ -978,13 +997,32 @@ function englishDayIndex() {
     return Math.max(0, Math.floor((n - s) / 86400000));
 }
 
+// 지금까지 공부한 표현 개수 (날짜 기준 자동 증가 + "한 개 더" 버튼으로 추가)
+function getStudiedCount() {
+    const autoMin = englishDayIndex() + 1; // 날짜가 지날수록 최소 한 개씩 늘어남
+    let stored = parseInt(localStorage.getItem('englishStudied') || '0', 10);
+    if (isNaN(stored) || stored < 1) stored = 0;
+    const count = Math.max(stored, autoMin);
+    if (count !== stored) localStorage.setItem('englishStudied', String(count));
+    return count;
+}
+
 function updateEnglishPhrase() {
     const enEl = document.getElementById('englishEn');
     const koEl = document.getElementById('englishKo');
     if (!enEl || !koEl) return;
-    const p = ENGLISH_PHRASES[englishDayIndex() % ENGLISH_PHRASES.length];
+    const idx = (getStudiedCount() - 1) % ENGLISH_PHRASES.length;
+    const p = ENGLISH_PHRASES[idx];
     enEl.textContent = `"${p.en}"`;
     koEl.textContent = p.ko;
+}
+
+// "한 개 더 공부" → 다음 표현으로 갱신, 표현 노트에 한 칸 추가됨
+function studyMoreEnglish() {
+    const count = getStudiedCount();
+    localStorage.setItem('englishStudied', String(count + 1));
+    updateEnglishPhrase();
+    showToast('새 표현을 가져왔어요! 표현 노트에 저장됐어요 ✏️');
 }
 
 function openEnglishNote() {
@@ -992,15 +1030,16 @@ function openEnglishNote() {
     const overlay = document.getElementById('englishOverlay');
     if (!listEl || !overlay) return;
 
-    // 지금까지 배운 개수 (시작일부터 오늘까지, 표현 수 만큼만)
-    const learned = Math.min(englishDayIndex() + 1, ENGLISH_PHRASES.length);
+    const count = getStudiedCount();
+    const learned = Math.min(count, ENGLISH_PHRASES.length); // 표현 수 한도 내에서
+    const latestIdx = (count - 1) % ENGLISH_PHRASES.length;   // 가장 최근에 본 표현
     let html = '';
     for (let i = learned - 1; i >= 0; i--) {
         const p = ENGLISH_PHRASES[i];
-        const isToday = i === (englishDayIndex() % ENGLISH_PHRASES.length) && i === learned - 1;
+        const isLatest = i === latestIdx;
         html += `
-            <div class="english-note-item${isToday ? ' today' : ''}">
-                <div class="note-day">Day ${i + 1}${isToday ? ' · 오늘' : ''}</div>
+            <div class="english-note-item${isLatest ? ' today' : ''}">
+                <div class="note-day">Day ${i + 1}${isLatest ? ' · 최근' : ''}</div>
                 <p class="note-en">"${p.en}"</p>
                 <p class="note-ko">${p.ko}</p>
             </div>`;
@@ -1115,6 +1154,8 @@ async function loadWeather() {
     const btn = document.getElementById('openEnglishNote');
     const overlay = document.getElementById('englishOverlay');
     const close = document.getElementById('englishClose');
+    const more = document.getElementById('studyMoreBtn');
+    if (more) more.addEventListener('click', studyMoreEnglish);
     if (btn) btn.addEventListener('click', openEnglishNote);
     if (close) close.addEventListener('click', () => overlay.classList.remove('show'));
     if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });

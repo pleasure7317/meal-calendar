@@ -141,6 +141,12 @@ body::before {
     line-height: 1.4;
 }
 
+.english-btns {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+}
+
 .english-note-btn {
     flex-shrink: 0;
     display: flex;
@@ -157,9 +163,18 @@ body::before {
     box-shadow: 0 3px 10px rgba(186, 104, 200, 0.3);
 }
 
+.english-note-btn.study-more {
+    background: linear-gradient(135deg, #ffb74d, #ff8a65);
+    box-shadow: 0 3px 10px rgba(255, 138, 101, 0.3);
+}
+
 .english-note-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 16px rgba(186, 104, 200, 0.4);
+}
+
+.english-note-btn.study-more:hover {
+    box-shadow: 0 6px 16px rgba(255, 138, 101, 0.45);
 }
 
 .english-note-btn .note-icon {
