@@ -377,9 +377,13 @@ body::before {
 .gallery-upload-btn.icon-only {
     width: 44px;
     height: 44px;
-    padding: 0;
+    padding: 0 0 3px;
     border-radius: 50%;
-    font-size: 1.35rem;
+    font-size: 1.9rem;
+    font-weight: 300;
+    line-height: 1;
+    position: relative;
+    top: 5px;
 }
 
 .gallery-grid {
