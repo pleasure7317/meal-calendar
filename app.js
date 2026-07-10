@@ -1846,7 +1846,7 @@ function renderGallery() {
     const grid = document.getElementById('galleryGrid');
     if (!grid) return;
     if (!_photos.length) {
-        grid.innerHTML = '<p class="gallery-empty">아직 담은 추억이 없어요.<br>📷 추억 담기로 사진을 올려보세요! 💕</p>';
+        grid.innerHTML = '<p class="gallery-empty">아직 사진이 없어요.<br>오른쪽 위 🖼️ 로 추가할 수 있어요.</p>';
         return;
     }
     grid.innerHTML = _photos.map((p, i) => {
