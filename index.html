@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260609u">
+    <link rel="stylesheet" href="style.css?v=20260609v">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -58,14 +58,32 @@
     <div class="gallery-section">
         <div class="gallery-container">
             <div class="gallery-head">
-                <h2 class="gallery-title">📸 우리의 추억</h2>
-                <button class="gallery-upload-btn" id="galleryUpload">
-                    <span class="gu-icon">📷</span><span>추억 담기</span>
-                </button>
+                <h2 class="gallery-title">💕 어진이</h2>
+                <button class="gallery-upload-btn icon-only" id="galleryUpload" title="사진 올리기">🖼️</button>
                 <input type="file" id="galleryInput" accept="image/*" multiple hidden>
             </div>
             <div class="gallery-grid" id="galleryGrid">
                 <p class="gallery-empty" id="galleryEmpty">아직 담은 추억이 없어요.<br>📷 추억 담기로 사진을 올려보세요! 💕</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 사진 올리기 (날짜·위치 입력) -->
+    <div class="modal-overlay" id="photoUploadOverlay">
+        <div class="modal photo-upload-modal">
+            <button class="modal-close" id="photoUploadClose">✕</button>
+            <h3 class="register-title">🖼️ 추억 올리기</h3>
+            <div class="pu-preview" id="puPreview"></div>
+            <div class="register-step">
+                <label class="register-label">📅 날짜</label>
+                <input type="date" id="puDate" class="period-input">
+            </div>
+            <div class="register-step">
+                <label class="register-label">📍 위치</label>
+                <input type="text" id="puLocation" class="pu-loc-input" placeholder="예: 홍천 카페, 우리집 …" maxlength="40">
+            </div>
+            <div class="pu-actions">
+                <button class="btn-primary" id="puSubmit">올리기</button>
             </div>
         </div>
     </div>
@@ -209,6 +227,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260609t"></script>
+    <script src="app.js?v=20260609u"></script>
 </body>
 </html>

@@ -1788,8 +1788,13 @@ async function loadWeather() {
     if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });
 })();
 
-// ==================== 우리의 추억 갤러리 ====================
-let _photos = []; // {id, image, created_at, local?}
+// ==================== 어진이 갤러리 ====================
+let _photos = [];          // {id, image, photo_date, location, created_at, local?}
+let _pendingUploads = [];  // 업로드 대기 중인 사진(dataURL) 목록
+
+function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 
 async function loadPhotosFromDB() {
     if (!sb) return null;
@@ -1844,13 +1849,17 @@ function renderGallery() {
         grid.innerHTML = '<p class="gallery-empty">아직 담은 추억이 없어요.<br>📷 추억 담기로 사진을 올려보세요! 💕</p>';
         return;
     }
-    grid.innerHTML = _photos.map((p, i) => `
+    grid.innerHTML = _photos.map((p, i) => {
+        const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
+        const hasMeta = p.location || dateStr;
+        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
+        return `
         <div class="gallery-item" data-i="${i}">
             <img src="${p.image}" alt="추억" loading="lazy">
             <button class="gi-del" data-id="${p.id}" title="삭제">✕</button>
-            ${p.created_at ? `<div class="gi-date">${fmtPhotoDate(p.created_at)}</div>` : ''}
-        </div>
-    `).join('');
+            ${meta}
+        </div>`;
+    }).join('');
     grid.querySelectorAll('.gallery-item img').forEach((im, i) => {
         im.addEventListener('click', () => openPhotoView(_photos[i].image));
     });
@@ -1859,27 +1868,51 @@ function renderGallery() {
     });
 }
 
-async function handleGalleryFiles(files) {
-    let added = 0;
+// 파일 선택 → 리사이즈 후 날짜·위치 입력 모달 띄우기
+async function onGalleryFilesSelected(files) {
+    const imgs = [];
     for (const file of files) {
         if (!file.type.startsWith('image/')) continue;
+        try { imgs.push(await resizeImageFile(file, 1400, 0.82)); } catch (e) { /* noop */ }
+    }
+    if (!imgs.length) return;
+    _pendingUploads = imgs;
+    const ov = document.getElementById('photoUploadOverlay');
+    const prev = document.getElementById('puPreview');
+    const dateEl = document.getElementById('puDate');
+    const locEl = document.getElementById('puLocation');
+    if (prev) prev.innerHTML = imgs.map(src => `<img src="${src}">`).join('');
+    if (dateEl) dateEl.value = getMealKey(new Date()); // 오늘 날짜 기본값
+    if (locEl) locEl.value = '';
+    if (ov) ov.classList.add('show');
+}
+
+// 모달에서 "올리기" → 날짜·위치와 함께 저장
+async function submitUpload() {
+    const ov = document.getElementById('photoUploadOverlay');
+    const dateEl = document.getElementById('puDate');
+    const locEl = document.getElementById('puLocation');
+    const photo_date = dateEl ? dateEl.value : '';
+    const location = locEl ? locEl.value.trim() : '';
+    const imgs = _pendingUploads; _pendingUploads = [];
+    if (ov) ov.classList.remove('show');
+    if (!imgs.length) return;
+
+    let added = 0;
+    for (const dataUrl of imgs) {
+        showToast('사진 올리는 중...');
         try {
-            showToast('사진 올리는 중...');
-            const dataUrl = await resizeImageFile(file, 1400, 0.82);
-            try {
-                if (!sb) throw new Error('no sb');
-                const { data, error } = await sb.from('photos').insert({ image: dataUrl }).select().single();
-                if (error) throw error;
-                _photos.unshift(data);
-            } catch (e) {
-                // 폴백: 이 기기에만 저장
-                const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, created_at: new Date().toISOString(), local: true };
-                const arr = loadPhotosLocal(); arr.unshift(local); savePhotosLocal(arr);
-                _photos.unshift(local);
-            }
-            added++;
-            renderGallery();
-        } catch (e) { console.warn('사진 처리 실패:', e); }
+            if (!sb) throw new Error('no sb');
+            const { data, error } = await sb.from('photos').insert({ image: dataUrl, photo_date, location }).select().single();
+            if (error) throw error;
+            _photos.unshift(data);
+        } catch (e) {
+            const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, photo_date, location, created_at: new Date().toISOString(), local: true };
+            const arr = loadPhotosLocal(); arr.unshift(local); savePhotosLocal(arr);
+            _photos.unshift(local);
+        }
+        added++;
+        renderGallery();
     }
     if (added) showToast(`추억을 담았어요! 💕 (${added}장)`);
 }
@@ -1912,18 +1945,26 @@ async function loadGallery() {
 (function setupGallery() {
     const btn = document.getElementById('galleryUpload');
     const input = document.getElementById('galleryInput');
-    const closeBtn = document.getElementById('photoViewClose');
-    const ov = document.getElementById('photoViewOverlay');
     if (btn && input) {
         btn.addEventListener('click', () => input.click());
         input.addEventListener('change', e => {
-            if (e.target.files.length) handleGalleryFiles([...e.target.files]);
+            if (e.target.files.length) onGalleryFilesSelected([...e.target.files]);
             input.value = '';
         });
     }
-    if (closeBtn && ov) {
-        closeBtn.addEventListener('click', () => ov.classList.remove('show'));
-        ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); });
+    // 업로드 모달
+    const uOv = document.getElementById('photoUploadOverlay');
+    const uClose = document.getElementById('photoUploadClose');
+    const uSubmit = document.getElementById('puSubmit');
+    if (uClose && uOv) uClose.addEventListener('click', () => { uOv.classList.remove('show'); _pendingUploads = []; });
+    if (uOv) uOv.addEventListener('click', e => { if (e.target === uOv) { uOv.classList.remove('show'); _pendingUploads = []; } });
+    if (uSubmit) uSubmit.addEventListener('click', submitUpload);
+    // 사진 크게 보기
+    const vClose = document.getElementById('photoViewClose');
+    const vOv = document.getElementById('photoViewOverlay');
+    if (vClose && vOv) {
+        vClose.addEventListener('click', () => vOv.classList.remove('show'));
+        vOv.addEventListener('click', e => { if (e.target === vOv) vOv.classList.remove('show'); });
     }
 })();
 

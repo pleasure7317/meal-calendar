@@ -40,8 +40,14 @@ CREATE POLICY "public_all_moods" ON moods
 CREATE TABLE IF NOT EXISTS photos (
   id SERIAL PRIMARY KEY,
   image TEXT NOT NULL,
+  photo_date TEXT,
+  location TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 이미 photos 테이블이 있던 경우 컬럼만 추가
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS photo_date TEXT;
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS location TEXT;
 
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_photos" ON photos;
