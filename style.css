@@ -328,7 +328,7 @@ body::before {
 .gallery-section {
     max-width: 1100px;
     margin: 0 auto;
-    padding: 24px 20px 60px;
+    padding: 8px 20px 60px;
 }
 
 .gallery-container {
