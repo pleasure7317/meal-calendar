@@ -341,7 +341,7 @@ let _todaySwiped = false;
 // ==================== Register Modal ====================
 const registerOverlay = document.getElementById('registerOverlay');
 
-document.getElementById('openRegister').addEventListener('click', () => {
+document.getElementById('openRegister')?.addEventListener('click', () => {
     resetRegisterModal();
     registerOverlay.classList.add('show');
 });
@@ -685,7 +685,7 @@ async function saveWeekFromGrid(gridId) {
 // ==================== Reset Modal ====================
 const resetOverlay = document.getElementById('resetOverlay');
 
-document.getElementById('openReset').addEventListener('click', () => {
+document.getElementById('openReset')?.addEventListener('click', () => {
     const today = new Date();
     const dayOfWeek = today.getDay();
     const monday = new Date(today);
@@ -821,8 +821,8 @@ function goNextMonth() {
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
 }
-document.getElementById('prevMonth').addEventListener('click', goPrevMonth);
-document.getElementById('nextMonth').addEventListener('click', goNextMonth);
+document.getElementById('prevMonth')?.addEventListener('click', goPrevMonth);
+document.getElementById('nextMonth')?.addEventListener('click', goNextMonth);
 
 // 달력 좌우 스와이프 → 이전/다음 달
 let _calSwiped = false;
@@ -1788,35 +1788,154 @@ async function loadWeather() {
     if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('show'); });
 })();
 
+// ==================== 우리의 추억 갤러리 ====================
+let _photos = []; // {id, image, created_at, local?}
+
+async function loadPhotosFromDB() {
+    if (!sb) return null;
+    try {
+        const { data, error } = await sb.from('photos').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        return data || [];
+    } catch (e) { console.warn('사진 DB 로드 실패:', e); return null; }
+}
+function loadPhotosLocal() {
+    try { const a = JSON.parse(localStorage.getItem('galleryPhotos') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function savePhotosLocal(arr) {
+    try { localStorage.setItem('galleryPhotos', JSON.stringify(arr)); }
+    catch (e) { showToast('기기 저장공간이 부족해요 😢'); }
+}
+
+function fmtPhotoDate(iso) {
+    try { const d = new Date(iso); return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`; }
+    catch (e) { return ''; }
+}
+
+// 파일 → 리사이즈된 JPEG dataURL
+function resizeImageFile(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                let { width, height } = img;
+                if (Math.max(width, height) > maxDim) {
+                    const s = maxDim / Math.max(width, height);
+                    width = Math.round(width * s); height = Math.round(height * s);
+                }
+                const c = document.createElement('canvas');
+                c.width = width; c.height = height;
+                c.getContext('2d').drawImage(img, 0, 0, width, height);
+                resolve(c.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function renderGallery() {
+    const grid = document.getElementById('galleryGrid');
+    if (!grid) return;
+    if (!_photos.length) {
+        grid.innerHTML = '<p class="gallery-empty">아직 담은 추억이 없어요.<br>📷 추억 담기로 사진을 올려보세요! 💕</p>';
+        return;
+    }
+    grid.innerHTML = _photos.map((p, i) => `
+        <div class="gallery-item" data-i="${i}">
+            <img src="${p.image}" alt="추억" loading="lazy">
+            <button class="gi-del" data-id="${p.id}" title="삭제">✕</button>
+            ${p.created_at ? `<div class="gi-date">${fmtPhotoDate(p.created_at)}</div>` : ''}
+        </div>
+    `).join('');
+    grid.querySelectorAll('.gallery-item img').forEach((im, i) => {
+        im.addEventListener('click', () => openPhotoView(_photos[i].image));
+    });
+    grid.querySelectorAll('.gi-del').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); removePhoto(btn.dataset.id); });
+    });
+}
+
+async function handleGalleryFiles(files) {
+    let added = 0;
+    for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        try {
+            showToast('사진 올리는 중...');
+            const dataUrl = await resizeImageFile(file, 1400, 0.82);
+            try {
+                if (!sb) throw new Error('no sb');
+                const { data, error } = await sb.from('photos').insert({ image: dataUrl }).select().single();
+                if (error) throw error;
+                _photos.unshift(data);
+            } catch (e) {
+                // 폴백: 이 기기에만 저장
+                const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, created_at: new Date().toISOString(), local: true };
+                const arr = loadPhotosLocal(); arr.unshift(local); savePhotosLocal(arr);
+                _photos.unshift(local);
+            }
+            added++;
+            renderGallery();
+        } catch (e) { console.warn('사진 처리 실패:', e); }
+    }
+    if (added) showToast(`추억을 담았어요! 💕 (${added}장)`);
+}
+
+async function removePhoto(id) {
+    if (!confirm('이 사진을 삭제할까요?')) return;
+    _photos = _photos.filter(p => String(p.id) !== String(id));
+    if (String(id).startsWith('local-')) {
+        savePhotosLocal(loadPhotosLocal().filter(p => String(p.id) !== String(id)));
+    } else if (sb) {
+        try { await sb.from('photos').delete().eq('id', id); } catch (e) { /* noop */ }
+    }
+    renderGallery();
+}
+
+function openPhotoView(src) {
+    const ov = document.getElementById('photoViewOverlay');
+    const im = document.getElementById('photoViewImg');
+    if (ov && im) { im.src = src; ov.classList.add('show'); }
+}
+
+async function loadGallery() {
+    const db = await loadPhotosFromDB();
+    const local = loadPhotosLocal();
+    _photos = (db || []).concat(local);
+    _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    renderGallery();
+}
+
+(function setupGallery() {
+    const btn = document.getElementById('galleryUpload');
+    const input = document.getElementById('galleryInput');
+    const closeBtn = document.getElementById('photoViewClose');
+    const ov = document.getElementById('photoViewOverlay');
+    if (btn && input) {
+        btn.addEventListener('click', () => input.click());
+        input.addEventListener('change', e => {
+            if (e.target.files.length) handleGalleryFiles([...e.target.files]);
+            input.value = '';
+        });
+    }
+    if (closeBtn && ov) {
+        closeBtn.addEventListener('click', () => ov.classList.remove('show'));
+        ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); });
+    }
+})();
+
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
     try { updateEnglishPhrase(); } catch (e) { console.warn('영어 구문 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
     try {
         loadWeather();
-        // 페이지를 열어둬도 시간이 지나면 자동으로 한 칸씩 굴러가게 주기적 갱신
         setInterval(loadWeather, 10 * 60 * 1000);
     } catch (e) { console.warn('날씨 로드 실패:', e); }
-    try {
-        await loadMealsFromDB();
-    } catch (e) {
-        console.warn('DB 로드 실패, 빈 상태로 시작:', e);
-    }
-    try {
-        updateTodayMenu();
-    } catch (e) {
-        console.warn('오늘의 메뉴 표시 실패:', e);
-    }
-    try {
-        initCalendar();
-    } catch (e) {
-        console.error('달력 렌더 실패:', e);
-    }
-    try {
-        await restoreMood();
-    } catch (e) {
-        console.warn('기분 로드 실패:', e);
-    }
+    try { await loadGallery(); } catch (e) { console.warn('갤러리 로드 실패:', e); }
 }
 
 if (document.readyState === 'loading') {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260609t">
+    <link rel="stylesheet" href="style.css?v=20260609u">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -54,85 +54,26 @@
         </div>
     </div>
 
-    <!-- Mood Selector -->
-    <div class="mood-section">
-        <div class="mood-container">
-            <h2 class="mood-title">오늘의 기분은 어떠세요?</h2>
-            <div class="mood-emojis">
-                <button class="mood-btn" data-mood="happy" title="행복해요">😊</button>
-                <button class="mood-btn" data-mood="love" title="사랑스러워요">🥰</button>
-                <button class="mood-btn" data-mood="excited" title="신나요">🤩</button>
-                <button class="mood-btn" data-mood="sleepy" title="졸려요">😴</button>
-                <button class="mood-btn" data-mood="tired" title="피곤해요">😮‍💨</button>
-                <button class="mood-btn" data-mood="sad" title="슬퍼요">🥺</button>
-                <button class="mood-btn" data-mood="angry" title="화나요">😤</button>
-                <button class="mood-btn" data-mood="sick" title="아파요">🤒</button>
+    <!-- 우리의 추억 갤러리 -->
+    <div class="gallery-section">
+        <div class="gallery-container">
+            <div class="gallery-head">
+                <h2 class="gallery-title">📸 우리의 추억</h2>
+                <button class="gallery-upload-btn" id="galleryUpload">
+                    <span class="gu-icon">📷</span><span>추억 담기</span>
+                </button>
+                <input type="file" id="galleryInput" accept="image/*" multiple hidden>
             </div>
-            <p class="mood-message" id="moodMessage"></p>
-        </div>
-    </div>
-
-    <!-- Today's Menu -->
-    <div class="today-section">
-        <div class="today-container">
-            <div class="today-row">
-                <div class="today-label">
-                    <span class="today-label-icon">🍽️</span>
-                    <h2 id="todayMenuLabel">오늘의 메뉴</h2>
-                </div>
-                <div class="today-meals" id="todayMeals">
-                    <div class="today-meal-card breakfast-card">
-                        <div class="meal-time-icon">🌅</div>
-                        <div class="meal-time-badge">조식</div>
-                        <div class="today-meal-content" id="todayBreakfast">
-                            <p class="no-meal">등록된 메뉴가 없어요</p>
-                        </div>
-                    </div>
-                    <div class="today-meal-card lunch-card">
-                        <div class="meal-time-icon">☀️</div>
-                        <div class="meal-time-badge">중식</div>
-                        <div class="today-meal-content" id="todayLunch">
-                            <p class="no-meal">등록된 메뉴가 없어요</p>
-                        </div>
-                    </div>
-                    <div class="today-meal-card dinner-card">
-                        <div class="meal-time-icon">🌙</div>
-                        <div class="meal-time-badge">석식</div>
-                        <div class="today-meal-content" id="todayDinner">
-                            <p class="no-meal">등록된 메뉴가 없어요</p>
-                        </div>
-                    </div>
-                </div>
+            <div class="gallery-grid" id="galleryGrid">
+                <p class="gallery-empty" id="galleryEmpty">아직 담은 추억이 없어요.<br>📷 추억 담기로 사진을 올려보세요! 💕</p>
             </div>
         </div>
     </div>
 
-    <!-- Calendar Section -->
-    <div class="calendar-section">
-        <div class="calendar-container">
-            <div class="calendar-top-bar">
-                <button class="btn-register" id="openRegister">📸 식단 등록</button>
-                <div class="calendar-header">
-                    <button class="nav-btn" id="prevMonth">◀</button>
-                    <h2 class="calendar-month" id="calendarMonth"></h2>
-                    <button class="nav-btn" id="nextMonth">▶</button>
-                </div>
-                <div></div>
-            </div>
-            <div class="calendar-weekdays">
-                <div class="weekday sun">일</div>
-                <div class="weekday">월</div>
-                <div class="weekday">화</div>
-                <div class="weekday">수</div>
-                <div class="weekday">목</div>
-                <div class="weekday">금</div>
-                <div class="weekday sat">토</div>
-            </div>
-            <div class="calendar-grid" id="calendarGrid"></div>
-        </div>
-        <div class="reset-section">
-            <button class="btn-reset" id="openReset">🗑️ 식단 초기화</button>
-        </div>
+    <!-- 사진 크게 보기 -->
+    <div class="photo-view-overlay" id="photoViewOverlay">
+        <button class="photo-view-close" id="photoViewClose">✕</button>
+        <img id="photoViewImg" src="" alt="추억 사진">
     </div>
 
     <!-- Register Modal (Popup) -->
@@ -268,6 +209,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260609s"></script>
+    <script src="app.js?v=20260609t"></script>
 </body>
 </html>

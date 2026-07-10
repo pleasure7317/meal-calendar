@@ -32,3 +32,18 @@ CREATE POLICY "public_all_meals" ON meals
 DROP POLICY IF EXISTS "public_all_moods" ON moods;
 CREATE POLICY "public_all_moods" ON moods
   FOR ALL USING (true) WITH CHECK (true);
+
+-- ============================================================
+-- 우리의 추억 갤러리 (사진) 테이블 — 두 사람이 같이 보려면 필요
+-- image 컬럼에 축소된 사진(base64)이 저장됩니다.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS photos (
+  id SERIAL PRIMARY KEY,
+  image TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "public_all_photos" ON photos;
+CREATE POLICY "public_all_photos" ON photos
+  FOR ALL USING (true) WITH CHECK (true);
