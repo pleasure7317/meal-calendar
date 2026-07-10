@@ -412,8 +412,16 @@ body::before {
     object-fit: cover;
     display: block;
     transition: transform 0.25s ease;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 .gallery-item:hover img { transform: scale(1.06); }
+.gallery-item.press-del {
+    outline: 3px solid #e74c3c;
+    outline-offset: -3px;
+}
+.gallery-item.press-del img { transform: scale(0.96); filter: brightness(0.8); }
 
 .gallery-item .gi-del {
     position: absolute;

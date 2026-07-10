@@ -1854,17 +1854,41 @@ function renderGallery() {
         const hasMeta = p.location || dateStr;
         const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
         return `
-        <div class="gallery-item" data-i="${i}">
-            <img src="${p.image}" alt="추억" loading="lazy">
-            <button class="gi-del" data-id="${p.id}" title="삭제">✕</button>
+        <div class="gallery-item" data-i="${i}" data-id="${p.id}">
+            <img src="${p.image}" alt="추억" loading="lazy" draggable="false">
             ${meta}
         </div>`;
     }).join('');
-    grid.querySelectorAll('.gallery-item img').forEach((im, i) => {
-        im.addEventListener('click', () => openPhotoView(_photos[i].image));
-    });
-    grid.querySelectorAll('.gi-del').forEach(btn => {
-        btn.addEventListener('click', (e) => { e.stopPropagation(); removePhoto(btn.dataset.id); });
+
+    // 짧게 누르면 크게 보기 / 길게 누르면 삭제
+    grid.querySelectorAll('.gallery-item').forEach(el => {
+        const i = parseInt(el.dataset.i, 10);
+        const id = el.dataset.id;
+        let timer = null, longPressed = false, sx = 0, sy = 0;
+        const start = (x, y) => {
+            longPressed = false; sx = x; sy = y;
+            timer = setTimeout(() => {
+                longPressed = true;
+                el.classList.add('press-del');
+                if (navigator.vibrate) navigator.vibrate(30);
+                removePhoto(id).finally(() => el.classList.remove('press-del'));
+            }, 550);
+        };
+        const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+        el.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        el.addEventListener('touchmove', e => {
+            if (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10) cancel();
+        }, { passive: true });
+        el.addEventListener('touchend', cancel);
+        el.addEventListener('touchcancel', cancel);
+        el.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+        el.addEventListener('mouseup', cancel);
+        el.addEventListener('mouseleave', cancel);
+        el.addEventListener('contextmenu', e => e.preventDefault());
+        el.addEventListener('click', () => {
+            if (longPressed) { longPressed = false; return; }
+            openPhotoView(_photos[i].image);
+        });
     });
 }
 
