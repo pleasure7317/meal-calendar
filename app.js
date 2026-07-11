@@ -1808,6 +1808,9 @@ function escapeHtml(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// 아웃라인 핀 모양 위치 아이콘 (SVG)
+const LOC_ICON = '<svg class="loc-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>';
+
 // 목록은 썸네일만 받아서 빠르게 (원본 image는 클릭할 때만 개별 로드)
 async function loadPhotosFromDB() {
     if (!sb) return null;
@@ -1889,7 +1892,7 @@ function renderGallery() {
         const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
         const dateBadge = dateStr ? `<span class="gi-date-badge">${dateStr}</span>` : '';
         const hasMeta = p.location || p.memo;
-        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}</div>` : '';
+        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">${LOC_ICON} ${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}</div>` : '';
         const src = p.thumb || p.image || '';
         return `
         <div class="gallery-item" data-i="${i}" data-id="${p.id}">
@@ -2166,7 +2169,7 @@ async function openPhotoView(photo) {
     if (meta) {
         const dateStr = fmtPhotoDate(photo.photo_date || photo.created_at);
         const top = [];
-        if (photo.location) top.push(`<span class="pv-loc">${escapeHtml(photo.location)}</span>`);
+        if (photo.location) top.push(`<span class="pv-loc">${LOC_ICON} ${escapeHtml(photo.location)}</span>`);
         if (dateStr) top.push(`<span class="pv-date">${dateStr}</span>`);
         let html = top.length ? `<div class="pv-top">${top.join('')}</div>` : '';
         if (photo.memo) html += `<p class="pv-memo">${escapeHtml(photo.memo)}</p>`;
