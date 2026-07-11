@@ -480,7 +480,7 @@ body::before {
 .gallery-item .gi-date-badge {
     position: absolute;
     top: 7px;
-    right: 8px;
+    left: 8px;
     color: #fff;
     font-size: 0.66rem;
     font-weight: 700;
