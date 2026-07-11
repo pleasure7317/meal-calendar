@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260610c">
+    <link rel="stylesheet" href="style.css?v=20260610d">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -83,6 +83,10 @@
             <div class="register-step">
                 <label class="register-label">📍 위치</label>
                 <input type="text" id="puLocation" class="pu-loc-input" placeholder="예: 홍천 카페, 우리집 …" maxlength="40">
+            </div>
+            <div class="register-step">
+                <label class="register-label">📝 내용</label>
+                <textarea id="puMemo" class="pu-memo-input" placeholder="그날의 이야기를 남겨보세요" maxlength="200" rows="2"></textarea>
             </div>
             <div class="pu-actions">
                 <button class="btn-primary" id="puSubmit">올리기</button>
@@ -239,6 +243,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260610b"></script>
+    <script src="app.js?v=20260610c"></script>
 </body>
 </html>

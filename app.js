@@ -1813,7 +1813,7 @@ async function loadPhotosFromDB() {
     if (!sb) return null;
     try {
         const { data, error } = await sb.from('photos')
-            .select('id,thumb,photo_date,location,created_at')
+            .select('id,thumb,photo_date,location,memo,created_at')
             .order('created_at', { ascending: false });
         if (error) throw error;
         return data || [];
@@ -1835,7 +1835,7 @@ function saveGalleryCache(photos) {
     try {
         const slim = photos.slice(0, 60).map(p => ({
             id: p.id, thumb: p.thumb || null, photo_date: p.photo_date || null,
-            location: p.location || null, created_at: p.created_at || null,
+            location: p.location || null, memo: p.memo || null, created_at: p.created_at || null,
         }));
         localStorage.setItem('galleryCache', JSON.stringify(slim));
     } catch (e) { /* 용량 초과 시 캐시 생략 */ }
@@ -1887,8 +1887,8 @@ function renderGallery() {
     }
     grid.innerHTML = _photos.map((p, i) => {
         const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
-        const hasMeta = p.location || dateStr;
-        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
+        const hasMeta = p.location || p.memo || dateStr;
+        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
         const src = p.thumb || p.image || '';
         return `
         <div class="gallery-item" data-i="${i}" data-id="${p.id}">
@@ -2001,6 +2001,8 @@ async function onGalleryFilesSelected(files) {
     if (prev) prev.innerHTML = imgs.map(src => `<img src="${src}">`).join('');
     if (dateEl) dateEl.value = getMealKey(new Date()); // 오늘 날짜 기본값
     if (locEl) locEl.value = '';
+    const memoEl0 = document.getElementById('puMemo');
+    if (memoEl0) memoEl0.value = '';
     if (ov) ov.classList.add('show');
 }
 
@@ -2021,9 +2023,11 @@ async function submitEdit() {
     const ov = document.getElementById('photoUploadOverlay');
     const dateEl = document.getElementById('puDate');
     const locEl = document.getElementById('puLocation');
+    const memoEl = document.getElementById('puMemo');
     const id = _editingId;
     const photo_date = dateEl ? dateEl.value : '';
     const location = locEl ? locEl.value.trim() : '';
+    const memo = memoEl ? memoEl.value.trim() : '';
     const newImg = _pendingUploads[0] || null;
     if (ov) ov.classList.remove('show');
     resetUploadModal();
@@ -2035,21 +2039,25 @@ async function submitEdit() {
         try { thumb = await makeThumbFromDataUrl(newImg, 360, 0.72); } catch (e) { /* noop */ }
     }
     // 화면 먼저 갱신
-    p.photo_date = photo_date; p.location = location;
+    p.photo_date = photo_date; p.location = location; p.memo = memo;
     if (newImg) { p.image = newImg; p.thumb = thumb; }
     sortPhotos(); renderGallery(); saveGalleryCache(_photos);
 
     // 저장
     if (String(id).startsWith('local-')) {
         const arr = loadPhotosLocal().map(x => String(x.id) === String(id)
-            ? { ...x, photo_date, location, ...(newImg ? { image: newImg, thumb } : {}) } : x);
+            ? { ...x, photo_date, location, memo, ...(newImg ? { image: newImg, thumb } : {}) } : x);
         savePhotosLocal(arr);
     } else if (sb) {
-        const upd = { photo_date, location };
+        const upd = { photo_date, location, memo };
         if (newImg) { upd.image = newImg; upd.thumb = thumb; }
         try {
             let r = await sb.from('photos').update(upd).eq('id', id);
-            if (r.error && newImg) { delete upd.thumb; await sb.from('photos').update(upd).eq('id', id); }
+            if (r.error) {
+                // memo/thumb 컬럼이 아직 없는 경우 → 있는 컬럼만으로 재시도
+                delete upd.memo; delete upd.thumb;
+                await sb.from('photos').update(upd).eq('id', id);
+            }
         } catch (e) { /* noop */ }
     }
     showToast('수정했어요 ✏️');
@@ -2061,8 +2069,10 @@ async function submitUpload() {
     const ov = document.getElementById('photoUploadOverlay');
     const dateEl = document.getElementById('puDate');
     const locEl = document.getElementById('puLocation');
+    const memoEl = document.getElementById('puMemo');
     const photo_date = dateEl ? dateEl.value : '';
     const location = locEl ? locEl.value.trim() : '';
+    const memo = memoEl ? memoEl.value.trim() : '';
     const imgs = _pendingUploads; _pendingUploads = [];
     if (ov) ov.classList.remove('show');
     if (!imgs.length) return;
@@ -2074,18 +2084,19 @@ async function submitUpload() {
         try { thumb = await makeThumbFromDataUrl(dataUrl, 360, 0.72); } catch (e) { /* noop */ }
         try {
             if (!sb) throw new Error('no sb');
-            let ins = await sb.from('photos').insert({ image: dataUrl, thumb, photo_date, location }).select().single();
+            let ins = await sb.from('photos').insert({ image: dataUrl, thumb, photo_date, location, memo }).select().single();
             if (ins.error) {
-                // thumb 컬럼이 아직 없으면 thumb 없이 저장
+                // thumb/memo 컬럼이 아직 없으면 기본 컬럼만으로 저장
                 ins = await sb.from('photos').insert({ image: dataUrl, photo_date, location }).select().single();
                 if (ins.error) throw ins.error;
             }
             const row = ins.data;
             if (thumb && !row.thumb) row.thumb = thumb;
+            if (memo && !row.memo) row.memo = memo;
             row.image = dataUrl;
             _photos.unshift(row);
         } catch (e) {
-            const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, thumb, photo_date, location, created_at: new Date().toISOString(), local: true };
+            const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, thumb, photo_date, location, memo, created_at: new Date().toISOString(), local: true };
             const arr = loadPhotosLocal(); arr.unshift(local); savePhotosLocal(arr);
             _photos.unshift(local);
         }
@@ -2128,6 +2139,8 @@ function openEditPhoto(id) {
     if (prev) prev.innerHTML = `<img src="${p.thumb || p.image || ''}">`;
     if (dateEl) dateEl.value = p.photo_date || (p.created_at || '').slice(0, 10) || getMealKey(new Date());
     if (locEl) locEl.value = p.location || '';
+    const memoEl = document.getElementById('puMemo');
+    if (memoEl) memoEl.value = p.memo || '';
     if (ov) ov.classList.add('show');
 }
 

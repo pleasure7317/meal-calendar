@@ -50,6 +50,8 @@ ALTER TABLE photos ADD COLUMN IF NOT EXISTS photo_date TEXT;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS location TEXT;
 -- 갤러리 목록용 썸네일(작은 이미지) — 로딩 속도 개선에 필요
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS thumb TEXT;
+-- 사진 내용(메모)
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS memo TEXT;
 
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_photos" ON photos;

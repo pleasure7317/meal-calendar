@@ -468,6 +468,14 @@ body::before {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.gallery-item .gi-memo {
+    font-size: 0.66rem;
+    opacity: 0.95;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .gallery-item .gi-d {
     font-size: 0.64rem;
     opacity: 0.9;
@@ -498,6 +506,18 @@ body::before {
     font-family: inherit;
 }
 .pu-loc-input:focus { outline: none; border-color: var(--primary); }
+
+.pu-memo-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    resize: none;
+    line-height: 1.5;
+}
+.pu-memo-input:focus { outline: none; border-color: var(--primary); }
 .pu-actions { padding: 16px 24px 24px; }
 .pu-actions .btn-primary { width: 100%; }
 
@@ -544,6 +564,7 @@ body::before {
         gap: 10px;
     }
     .gallery-item .gi-loc { font-size: 0.78rem; }
+    .gallery-item .gi-memo { font-size: 0.7rem; }
     .gallery-item .gi-d { font-size: 0.68rem; }
 }
 
