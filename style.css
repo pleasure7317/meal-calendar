@@ -476,20 +476,16 @@ body::before {
     text-overflow: ellipsis;
 }
 
-/* 썸네일 왼쪽 위 날짜 배지 */
+/* 썸네일 왼쪽 위 날짜 (배경 없이 그림자로 가독성) */
 .gallery-item .gi-date-badge {
     position: absolute;
-    top: 6px;
-    left: 6px;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    top: 7px;
+    left: 8px;
     color: #fff;
-    font-size: 0.62rem;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 10px;
-    letter-spacing: 0.2px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75), 0 0 8px rgba(0, 0, 0, 0.4);
 }
 
 /* 업로드 모달 */
