@@ -1794,13 +1794,13 @@ let _pendingUploads = [];  // 업로드 대기 중인 사진(dataURL) 목록
 let _editingId = null;     // 편집 중인 사진 id (null이면 새 업로드)
 let _actionPhotoId = null; // 길게 눌러 선택한 사진 id
 
-// 항상 빠른 날짜(과거)부터 정렬
+// 항상 최신 날짜부터 정렬
 function sortPhotos() {
     _photos.sort((a, b) => {
         const ka = a.photo_date || (a.created_at || '').slice(0, 10) || '';
         const kb = b.photo_date || (b.created_at || '').slice(0, 10) || '';
-        if (ka !== kb) return ka < kb ? -1 : 1;
-        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+        if (ka !== kb) return ka > kb ? -1 : 1;
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
     });
 }
 
