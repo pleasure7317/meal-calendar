@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS photos (
 -- 이미 photos 테이블이 있던 경우 컬럼만 추가
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS photo_date TEXT;
 ALTER TABLE photos ADD COLUMN IF NOT EXISTS location TEXT;
+-- 갤러리 목록용 썸네일(작은 이미지) — 로딩 속도 개선에 필요
+ALTER TABLE photos ADD COLUMN IF NOT EXISTS thumb TEXT;
 
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_photos" ON photos;

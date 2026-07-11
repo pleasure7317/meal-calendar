@@ -1796,13 +1796,37 @@ function escapeHtml(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// 목록은 썸네일만 받아서 빠르게 (원본 image는 클릭할 때만 개별 로드)
 async function loadPhotosFromDB() {
     if (!sb) return null;
     try {
-        const { data, error } = await sb.from('photos').select('*').order('created_at', { ascending: false });
+        const { data, error } = await sb.from('photos')
+            .select('id,thumb,photo_date,location,created_at')
+            .order('created_at', { ascending: false });
         if (error) throw error;
         return data || [];
-    } catch (e) { console.warn('사진 DB 로드 실패:', e); return null; }
+    } catch (e) {
+        // thumb 컬럼이 아직 없는 경우 등 → 기존 방식으로 폴백
+        try {
+            const { data, error } = await sb.from('photos').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            return data || [];
+        } catch (e2) { console.warn('사진 DB 로드 실패:', e2); return null; }
+    }
+}
+
+// 마지막 목록(썸네일)을 기기에 저장 → 다음 방문 때 즉시 표시
+function loadGalleryCache() {
+    try { const a = JSON.parse(localStorage.getItem('galleryCache') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function saveGalleryCache(photos) {
+    try {
+        const slim = photos.slice(0, 60).map(p => ({
+            id: p.id, thumb: p.thumb || null, photo_date: p.photo_date || null,
+            location: p.location || null, created_at: p.created_at || null,
+        }));
+        localStorage.setItem('galleryCache', JSON.stringify(slim));
+    } catch (e) { /* 용량 초과 시 캐시 생략 */ }
 }
 function loadPhotosLocal() {
     try { const a = JSON.parse(localStorage.getItem('galleryPhotos') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
@@ -1853,12 +1877,16 @@ function renderGallery() {
         const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
         const hasMeta = p.location || dateStr;
         const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
+        const src = p.thumb || p.image || '';
         return `
         <div class="gallery-item" data-i="${i}" data-id="${p.id}">
-            <img src="${p.image}" alt="추억" loading="lazy" draggable="false">
+            <img ${src ? `src="${src}"` : ''} alt="추억" loading="lazy" draggable="false">
             ${meta}
         </div>`;
     }).join('');
+
+    // 썸네일이 없는 옛 사진: 원본을 뒤에서 하나씩 받아 채움 (화면은 먼저 뜸)
+    backfillMissingThumbs();
 
     // 짧게 누르면 크게 보기 / 길게 누르면 삭제
     grid.querySelectorAll('.gallery-item').forEach(el => {
@@ -1887,9 +1915,63 @@ function renderGallery() {
         el.addEventListener('contextmenu', e => e.preventDefault());
         el.addEventListener('click', () => {
             if (longPressed) { longPressed = false; return; }
-            openPhotoView(_photos[i].image);
+            openPhotoView(_photos[i]);
         });
     });
+}
+
+// dataURL → 작은 썸네일 dataURL
+function makeThumbFromDataUrl(dataUrl, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (Math.max(width, height) > maxDim) {
+                const s = maxDim / Math.max(width, height);
+                width = Math.round(width * s); height = Math.round(height * s);
+            }
+            const c = document.createElement('canvas');
+            c.width = width; c.height = height;
+            c.getContext('2d').drawImage(img, 0, 0, width, height);
+            resolve(c.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = dataUrl;
+    });
+}
+
+// 원본 image를 DB에서 개별 로드 (필요할 때만)
+async function fetchPhotoImage(id) {
+    if (!sb) return null;
+    try {
+        const { data, error } = await sb.from('photos').select('image').eq('id', id).single();
+        if (error) throw error;
+        return data ? data.image : null;
+    } catch (e) { return null; }
+}
+
+// 썸네일 없는 옛 사진: 원본 받아 표시하고, 썸네일 만들어 DB에 저장(다음부턴 빠름)
+let _backfillRunning = false;
+async function backfillMissingThumbs() {
+    if (_backfillRunning) return;
+    _backfillRunning = true;
+    try {
+        for (const p of _photos) {
+            if (p.thumb || p.image || p.local) continue;
+            const img = await fetchPhotoImage(p.id);
+            if (!img) continue;
+            p.image = img;
+            const el = document.querySelector(`.gallery-item[data-id="${p.id}"] img`);
+            if (el && !el.src) el.src = img;
+            try {
+                const thumb = await makeThumbFromDataUrl(img, 360, 0.72);
+                p.thumb = thumb;
+                if (el) el.src = thumb;
+                if (sb) await sb.from('photos').update({ thumb }).eq('id', p.id);
+            } catch (e) { /* noop */ }
+        }
+        saveGalleryCache(_photos);
+    } finally { _backfillRunning = false; }
 }
 
 // 파일 선택 → 리사이즈 후 날짜·위치 입력 모달 띄우기
@@ -1925,19 +2007,29 @@ async function submitUpload() {
     let added = 0;
     for (const dataUrl of imgs) {
         showToast('사진 올리는 중...');
+        let thumb = null;
+        try { thumb = await makeThumbFromDataUrl(dataUrl, 360, 0.72); } catch (e) { /* noop */ }
         try {
             if (!sb) throw new Error('no sb');
-            const { data, error } = await sb.from('photos').insert({ image: dataUrl, photo_date, location }).select().single();
-            if (error) throw error;
-            _photos.unshift(data);
+            let ins = await sb.from('photos').insert({ image: dataUrl, thumb, photo_date, location }).select().single();
+            if (ins.error) {
+                // thumb 컬럼이 아직 없으면 thumb 없이 저장
+                ins = await sb.from('photos').insert({ image: dataUrl, photo_date, location }).select().single();
+                if (ins.error) throw ins.error;
+            }
+            const row = ins.data;
+            if (thumb && !row.thumb) row.thumb = thumb;
+            row.image = dataUrl;
+            _photos.unshift(row);
         } catch (e) {
-            const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, photo_date, location, created_at: new Date().toISOString(), local: true };
+            const local = { id: 'local-' + Date.now() + Math.random().toString(36).slice(2, 6), image: dataUrl, thumb, photo_date, location, created_at: new Date().toISOString(), local: true };
             const arr = loadPhotosLocal(); arr.unshift(local); savePhotosLocal(arr);
             _photos.unshift(local);
         }
         added++;
         renderGallery();
     }
+    saveGalleryCache(_photos);
     if (added) showToast(`추억을 담았어요! 💕 (${added}장)`);
 }
 
@@ -1950,20 +2042,39 @@ async function removePhoto(id) {
         try { await sb.from('photos').delete().eq('id', id); } catch (e) { /* noop */ }
     }
     renderGallery();
+    saveGalleryCache(_photos);
 }
 
-function openPhotoView(src) {
+async function openPhotoView(photo) {
     const ov = document.getElementById('photoViewOverlay');
     const im = document.getElementById('photoViewImg');
-    if (ov && im) { im.src = src; ov.classList.add('show'); }
+    if (!ov || !im) return;
+    // 우선 썸네일이라도 바로 띄우고, 원본은 받아서 교체
+    im.src = photo.image || photo.thumb || '';
+    ov.classList.add('show');
+    if (!photo.image && photo.id != null && !String(photo.id).startsWith('local-')) {
+        const img = await fetchPhotoImage(photo.id);
+        if (img) { photo.image = img; if (ov.classList.contains('show')) im.src = img; }
+    }
 }
 
 async function loadGallery() {
-    const db = await loadPhotosFromDB();
+    // 1) 기기에 저장된 마지막 목록으로 즉시 표시
+    const cached = loadGalleryCache();
     const local = loadPhotosLocal();
-    _photos = (db || []).concat(local);
-    _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-    renderGallery();
+    if (cached.length || local.length) {
+        _photos = cached.concat(local);
+        _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        renderGallery();
+    }
+    // 2) 최신 목록으로 갱신
+    const db = await loadPhotosFromDB();
+    if (db !== null) {
+        _photos = db.concat(local);
+        _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        renderGallery();
+        saveGalleryCache(_photos);
+    }
 }
 
 (function setupGallery() {
