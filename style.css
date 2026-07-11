@@ -2019,6 +2019,7 @@ body::before {
     .register-modal,
     .english-modal,
     .photo-upload-modal,
+    .photo-action-modal,
     #mealModal {
         border-radius: var(--radius);
     }
