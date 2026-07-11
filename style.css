@@ -476,9 +476,20 @@ body::before {
     text-overflow: ellipsis;
 }
 
-.gallery-item .gi-d {
-    font-size: 0.64rem;
-    opacity: 0.9;
+/* 썸네일 왼쪽 위 날짜 배지 */
+.gallery-item .gi-date-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.2px;
 }
 
 /* 업로드 모달 */
@@ -606,19 +617,26 @@ body::before {
     font-family: inherit;
 }
 
-/* 크게 보기: 사진 바로 아래 위치·날짜 */
+/* 크게 보기: 사진 바로 아래 위치·날짜·내용 */
 .pv-meta {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     color: #fff;
-    padding: 9px 18px;
-    border-radius: 22px;
+    padding: 10px 20px;
+    border-radius: 16px;
     max-width: 86vw;
+}
+.pv-meta .pv-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     white-space: nowrap;
+    max-width: 100%;
 }
 .pv-meta .pv-loc {
     font-weight: 700;
@@ -630,6 +648,13 @@ body::before {
     font-size: 0.8rem;
     opacity: 0.85;
     flex-shrink: 0;
+}
+.pv-meta .pv-memo {
+    font-size: 0.84rem;
+    line-height: 1.5;
+    opacity: 0.95;
+    text-align: center;
+    word-break: break-word;
 }
 
 /* ===== Weather Section ===== */

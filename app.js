@@ -1887,12 +1887,14 @@ function renderGallery() {
     }
     grid.innerHTML = _photos.map((p, i) => {
         const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
-        const hasMeta = p.location || p.memo || dateStr;
-        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}${dateStr ? `<span class="gi-d">${dateStr}</span>` : ''}</div>` : '';
+        const dateBadge = dateStr ? `<span class="gi-date-badge">${dateStr}</span>` : '';
+        const hasMeta = p.location || p.memo;
+        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📍 ${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}</div>` : '';
         const src = p.thumb || p.image || '';
         return `
         <div class="gallery-item" data-i="${i}" data-id="${p.id}">
             <img ${src ? `src="${src}"` : ''} alt="추억" loading="lazy" draggable="false">
+            ${dateBadge}
             ${meta}
         </div>`;
     }).join('');
@@ -2163,11 +2165,13 @@ async function openPhotoView(photo) {
     // 사진 위에 위치·날짜를 자연스럽게 표시
     if (meta) {
         const dateStr = fmtPhotoDate(photo.photo_date || photo.created_at);
-        const parts = [];
-        if (photo.location) parts.push(`<span class="pv-loc">📍 ${escapeHtml(photo.location)}</span>`);
-        if (dateStr) parts.push(`<span class="pv-date">${dateStr}</span>`);
-        meta.innerHTML = parts.join('');
-        meta.style.display = parts.length ? '' : 'none';
+        const top = [];
+        if (photo.location) top.push(`<span class="pv-loc">📍 ${escapeHtml(photo.location)}</span>`);
+        if (dateStr) top.push(`<span class="pv-date">${dateStr}</span>`);
+        let html = top.length ? `<div class="pv-top">${top.join('')}</div>` : '';
+        if (photo.memo) html += `<p class="pv-memo">${escapeHtml(photo.memo)}</p>`;
+        meta.innerHTML = html;
+        meta.style.display = html ? '' : 'none';
     }
     // 우선 썸네일이라도 바로 띄우고, 원본은 받아서 교체
     im.src = photo.image || photo.thumb || '';
