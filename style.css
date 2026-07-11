@@ -473,7 +473,7 @@ body::before {
 .loc-icon {
     width: 1.05em;
     height: 1.05em;
-    vertical-align: -0.06em;
+    vertical-align: -0.12em;
     flex-shrink: 0;
 }
 .gallery-item .gi-memo {
