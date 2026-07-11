@@ -1889,7 +1889,7 @@ function renderGallery() {
         const dateStr = fmtPhotoDate(p.photo_date || p.created_at);
         const dateBadge = dateStr ? `<span class="gi-date-badge">${dateStr}</span>` : '';
         const hasMeta = p.location || p.memo;
-        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">📌 ${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}</div>` : '';
+        const meta = hasMeta ? `<div class="gi-meta">${p.location ? `<span class="gi-loc">${escapeHtml(p.location)}</span>` : ''}${p.memo ? `<span class="gi-memo">${escapeHtml(p.memo)}</span>` : ''}</div>` : '';
         const src = p.thumb || p.image || '';
         return `
         <div class="gallery-item" data-i="${i}" data-id="${p.id}">
@@ -2166,7 +2166,7 @@ async function openPhotoView(photo) {
     if (meta) {
         const dateStr = fmtPhotoDate(photo.photo_date || photo.created_at);
         const top = [];
-        if (photo.location) top.push(`<span class="pv-loc">📌 ${escapeHtml(photo.location)}</span>`);
+        if (photo.location) top.push(`<span class="pv-loc">${escapeHtml(photo.location)}</span>`);
         if (dateStr) top.push(`<span class="pv-date">${dateStr}</span>`);
         let html = top.length ? `<div class="pv-top">${top.join('')}</div>` : '';
         if (photo.memo) html += `<p class="pv-memo">${escapeHtml(photo.memo)}</p>`;
