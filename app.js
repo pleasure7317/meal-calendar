@@ -1791,6 +1791,18 @@ async function loadWeather() {
 // ==================== 어진이 갤러리 ====================
 let _photos = [];          // {id, image, photo_date, location, created_at, local?}
 let _pendingUploads = [];  // 업로드 대기 중인 사진(dataURL) 목록
+let _editingId = null;     // 편집 중인 사진 id (null이면 새 업로드)
+let _actionPhotoId = null; // 길게 눌러 선택한 사진 id
+
+// 항상 빠른 날짜(과거)부터 정렬
+function sortPhotos() {
+    _photos.sort((a, b) => {
+        const ka = a.photo_date || (a.created_at || '').slice(0, 10) || '';
+        const kb = b.photo_date || (b.created_at || '').slice(0, 10) || '';
+        if (ka !== kb) return ka < kb ? -1 : 1;
+        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+    });
+}
 
 function escapeHtml(s) {
     return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1897,9 +1909,8 @@ function renderGallery() {
             longPressed = false; sx = x; sy = y;
             timer = setTimeout(() => {
                 longPressed = true;
-                el.classList.add('press-del');
                 if (navigator.vibrate) navigator.vibrate(30);
-                removePhoto(id).finally(() => el.classList.remove('press-del'));
+                openPhotoActions(id);
             }, 550);
         };
         const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
@@ -1993,8 +2004,60 @@ async function onGalleryFilesSelected(files) {
     if (ov) ov.classList.add('show');
 }
 
+// 업로드 모달을 기본(새 업로드) 상태로 되돌림
+function resetUploadModal() {
+    _editingId = null;
+    _pendingUploads = [];
+    const title = document.getElementById('puTitle');
+    const submit = document.getElementById('puSubmit');
+    const changeBtn = document.getElementById('puChangePhoto');
+    if (title) title.textContent = '🖼️ 추억 올리기';
+    if (submit) submit.textContent = '올리기';
+    if (changeBtn) changeBtn.style.display = 'none';
+}
+
+// 편집 저장: 날짜·위치(+사진 교체 시 이미지)를 업데이트
+async function submitEdit() {
+    const ov = document.getElementById('photoUploadOverlay');
+    const dateEl = document.getElementById('puDate');
+    const locEl = document.getElementById('puLocation');
+    const id = _editingId;
+    const photo_date = dateEl ? dateEl.value : '';
+    const location = locEl ? locEl.value.trim() : '';
+    const newImg = _pendingUploads[0] || null;
+    if (ov) ov.classList.remove('show');
+    resetUploadModal();
+    const p = _photos.find(x => String(x.id) === String(id));
+    if (!p) return;
+
+    let thumb = p.thumb || null;
+    if (newImg) {
+        try { thumb = await makeThumbFromDataUrl(newImg, 360, 0.72); } catch (e) { /* noop */ }
+    }
+    // 화면 먼저 갱신
+    p.photo_date = photo_date; p.location = location;
+    if (newImg) { p.image = newImg; p.thumb = thumb; }
+    sortPhotos(); renderGallery(); saveGalleryCache(_photos);
+
+    // 저장
+    if (String(id).startsWith('local-')) {
+        const arr = loadPhotosLocal().map(x => String(x.id) === String(id)
+            ? { ...x, photo_date, location, ...(newImg ? { image: newImg, thumb } : {}) } : x);
+        savePhotosLocal(arr);
+    } else if (sb) {
+        const upd = { photo_date, location };
+        if (newImg) { upd.image = newImg; upd.thumb = thumb; }
+        try {
+            let r = await sb.from('photos').update(upd).eq('id', id);
+            if (r.error && newImg) { delete upd.thumb; await sb.from('photos').update(upd).eq('id', id); }
+        } catch (e) { /* noop */ }
+    }
+    showToast('수정했어요 ✏️');
+}
+
 // 모달에서 "올리기" → 날짜·위치와 함께 저장
 async function submitUpload() {
+    if (_editingId) return submitEdit();
     const ov = document.getElementById('photoUploadOverlay');
     const dateEl = document.getElementById('puDate');
     const locEl = document.getElementById('puLocation');
@@ -2027,14 +2090,48 @@ async function submitUpload() {
             _photos.unshift(local);
         }
         added++;
+        sortPhotos();
         renderGallery();
     }
     saveGalleryCache(_photos);
     if (added) showToast(`추억을 담았어요! 💕 (${added}장)`);
 }
 
+// 길게 누르면 뜨는 삭제/편집 메뉴
+function openPhotoActions(id) {
+    _actionPhotoId = id;
+    const ov = document.getElementById('photoActionOverlay');
+    if (ov) ov.classList.add('show');
+}
+function closePhotoActions() {
+    _actionPhotoId = null;
+    const ov = document.getElementById('photoActionOverlay');
+    if (ov) ov.classList.remove('show');
+}
+
+// 편집 모달 열기 (사진·날짜·위치 수정)
+function openEditPhoto(id) {
+    const p = _photos.find(x => String(x.id) === String(id));
+    if (!p) return;
+    _editingId = id;
+    _pendingUploads = []; // 사진 교체 전까지는 기존 사진 유지
+    const ov = document.getElementById('photoUploadOverlay');
+    const prev = document.getElementById('puPreview');
+    const dateEl = document.getElementById('puDate');
+    const locEl = document.getElementById('puLocation');
+    const title = document.getElementById('puTitle');
+    const submit = document.getElementById('puSubmit');
+    const changeBtn = document.getElementById('puChangePhoto');
+    if (title) title.textContent = '✏️ 추억 편집';
+    if (submit) submit.textContent = '저장하기';
+    if (changeBtn) changeBtn.style.display = '';
+    if (prev) prev.innerHTML = `<img src="${p.thumb || p.image || ''}">`;
+    if (dateEl) dateEl.value = p.photo_date || (p.created_at || '').slice(0, 10) || getMealKey(new Date());
+    if (locEl) locEl.value = p.location || '';
+    if (ov) ov.classList.add('show');
+}
+
 async function removePhoto(id) {
-    if (!confirm('이 사진을 삭제할까요?')) return;
     _photos = _photos.filter(p => String(p.id) !== String(id));
     if (String(id).startsWith('local-')) {
         savePhotosLocal(loadPhotosLocal().filter(p => String(p.id) !== String(id)));
@@ -2048,7 +2145,17 @@ async function removePhoto(id) {
 async function openPhotoView(photo) {
     const ov = document.getElementById('photoViewOverlay');
     const im = document.getElementById('photoViewImg');
+    const meta = document.getElementById('photoViewMeta');
     if (!ov || !im) return;
+    // 사진 위에 위치·날짜를 자연스럽게 표시
+    if (meta) {
+        const dateStr = fmtPhotoDate(photo.photo_date || photo.created_at);
+        const parts = [];
+        if (photo.location) parts.push(`<span class="pv-loc">📍 ${escapeHtml(photo.location)}</span>`);
+        if (dateStr) parts.push(`<span class="pv-date">${dateStr}</span>`);
+        meta.innerHTML = parts.join('');
+        meta.style.display = parts.length ? '' : 'none';
+    }
     // 우선 썸네일이라도 바로 띄우고, 원본은 받아서 교체
     im.src = photo.image || photo.thumb || '';
     ov.classList.add('show');
@@ -2064,14 +2171,14 @@ async function loadGallery() {
     const local = loadPhotosLocal();
     if (cached.length || local.length) {
         _photos = cached.concat(local);
-        _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        sortPhotos();
         renderGallery();
     }
     // 2) 최신 목록으로 갱신
     const db = await loadPhotosFromDB();
     if (db !== null) {
         _photos = db.concat(local);
-        _photos.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        sortPhotos();
         renderGallery();
         saveGalleryCache(_photos);
     }
@@ -2087,13 +2194,40 @@ async function loadGallery() {
             input.value = '';
         });
     }
-    // 업로드 모달
+    // 업로드/편집 모달
     const uOv = document.getElementById('photoUploadOverlay');
     const uClose = document.getElementById('photoUploadClose');
     const uSubmit = document.getElementById('puSubmit');
-    if (uClose && uOv) uClose.addEventListener('click', () => { uOv.classList.remove('show'); _pendingUploads = []; });
-    if (uOv) uOv.addEventListener('click', e => { if (e.target === uOv) { uOv.classList.remove('show'); _pendingUploads = []; } });
+    if (uClose && uOv) uClose.addEventListener('click', () => { uOv.classList.remove('show'); resetUploadModal(); });
+    if (uOv) uOv.addEventListener('click', e => { if (e.target === uOv) { uOv.classList.remove('show'); resetUploadModal(); } });
     if (uSubmit) uSubmit.addEventListener('click', submitUpload);
+
+    // 편집 모드: 사진 바꾸기
+    const changeBtn = document.getElementById('puChangePhoto');
+    const replaceInput = document.getElementById('puReplaceInput');
+    if (changeBtn && replaceInput) {
+        changeBtn.addEventListener('click', () => replaceInput.click());
+        replaceInput.addEventListener('change', async e => {
+            if (!e.target.files.length) return;
+            try {
+                const dataUrl = await resizeImageFile(e.target.files[0], 1400, 0.82);
+                _pendingUploads = [dataUrl];
+                const prev = document.getElementById('puPreview');
+                if (prev) prev.innerHTML = `<img src="${dataUrl}">`;
+            } catch (err) { showToast('사진을 불러오지 못했어요 😢'); }
+            replaceInput.value = '';
+        });
+    }
+
+    // 길게 누르면 뜨는 삭제/편집 메뉴
+    const aOv = document.getElementById('photoActionOverlay');
+    const aEdit = document.getElementById('paEdit');
+    const aDel = document.getElementById('paDelete');
+    const aCancel = document.getElementById('paCancel');
+    if (aEdit) aEdit.addEventListener('click', () => { const id = _actionPhotoId; closePhotoActions(); if (id != null) openEditPhoto(id); });
+    if (aDel) aDel.addEventListener('click', () => { const id = _actionPhotoId; closePhotoActions(); if (id != null) removePhoto(id); });
+    if (aCancel) aCancel.addEventListener('click', closePhotoActions);
+    if (aOv) aOv.addEventListener('click', e => { if (e.target === aOv) closePhotoActions(); });
     // 사진 크게 보기
     const vClose = document.getElementById('photoViewClose');
     const vOv = document.getElementById('photoViewOverlay');

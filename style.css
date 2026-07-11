@@ -533,15 +533,82 @@ body::before {
     cursor: pointer;
 }
 
-/* 모바일: 갤러리 3열 고정 */
+/* 모바일: 2열로 크게 (사진·글자 잘 보이게) */
 @media (max-width: 640px) {
     .gallery-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
     }
-    .gallery-item .gi-loc { font-size: 0.6rem; }
-    .gallery-item .gi-d { font-size: 0.54rem; }
-    .gallery-item .gi-del { width: 22px; height: 22px; font-size: 0.7rem; }
+    .gallery-item .gi-loc { font-size: 0.78rem; }
+    .gallery-item .gi-d { font-size: 0.68rem; }
+}
+
+/* 길게 누르면 뜨는 삭제/편집 메뉴 */
+.photo-action-modal {
+    max-width: 300px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.pa-btn {
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.1s ease;
+}
+.pa-btn:active { transform: scale(0.97); }
+.pa-btn.edit { background: var(--primary-light); color: var(--primary-dark); }
+.pa-btn.del { background: #fdecea; color: #c0392b; }
+.pa-btn.cancel { background: #f2f2f4; color: var(--text-light); }
+
+/* 편집: 사진 바꾸기 버튼 */
+.pu-change-btn {
+    margin: 6px 24px 0;
+    padding: 8px 14px;
+    background: rgba(186, 104, 200, 0.1);
+    color: var(--secondary);
+    border: 1.5px solid rgba(186, 104, 200, 0.3);
+    border-radius: 18px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* 크게 보기: 사진 위 위치·날짜 */
+.pv-meta {
+    position: absolute;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 26px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 9px 18px;
+    border-radius: 22px;
+    max-width: 86vw;
+    white-space: nowrap;
+}
+.pv-meta .pv-loc {
+    font-weight: 700;
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.pv-meta .pv-date {
+    font-size: 0.8rem;
+    opacity: 0.85;
+    flex-shrink: 0;
 }
 
 /* ===== Weather Section ===== */

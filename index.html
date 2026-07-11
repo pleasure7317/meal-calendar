@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260609z">
+    <link rel="stylesheet" href="style.css?v=20260610a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -68,12 +68,14 @@
         </div>
     </div>
 
-    <!-- 사진 올리기 (날짜·위치 입력) -->
+    <!-- 사진 올리기/편집 (날짜·위치 입력) -->
     <div class="modal-overlay" id="photoUploadOverlay">
         <div class="modal photo-upload-modal">
             <button class="modal-close" id="photoUploadClose">✕</button>
-            <h3 class="register-title">🖼️ 추억 올리기</h3>
+            <h3 class="register-title" id="puTitle">🖼️ 추억 올리기</h3>
             <div class="pu-preview" id="puPreview"></div>
+            <button class="pu-change-btn" id="puChangePhoto" style="display:none;">🔄 사진 바꾸기</button>
+            <input type="file" id="puReplaceInput" accept="image/*" hidden>
             <div class="register-step">
                 <label class="register-label">📅 날짜</label>
                 <input type="date" id="puDate" class="period-input">
@@ -88,10 +90,20 @@
         </div>
     </div>
 
+    <!-- 사진 길게 누르면 뜨는 메뉴 -->
+    <div class="modal-overlay" id="photoActionOverlay">
+        <div class="modal photo-action-modal">
+            <button class="pa-btn edit" id="paEdit">✏️ 편집하기</button>
+            <button class="pa-btn del" id="paDelete">🗑️ 삭제하기</button>
+            <button class="pa-btn cancel" id="paCancel">취소</button>
+        </div>
+    </div>
+
     <!-- 사진 크게 보기 -->
     <div class="photo-view-overlay" id="photoViewOverlay">
         <button class="photo-view-close" id="photoViewClose">✕</button>
         <img id="photoViewImg" src="" alt="추억 사진">
+        <div class="pv-meta" id="photoViewMeta"></div>
     </div>
 
     <!-- Register Modal (Popup) -->
@@ -227,6 +239,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20260609x"></script>
+    <script src="app.js?v=20260610a"></script>
 </body>
 </html>
