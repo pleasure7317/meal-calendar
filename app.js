@@ -1836,12 +1836,27 @@ function loadGalleryCache() {
 }
 function saveGalleryCache(photos) {
     try {
-        const slim = photos.slice(0, 60).map(p => ({
-            id: p.id, thumb: p.thumb || null, photo_date: p.photo_date || null,
-            location: p.location || null, memo: p.memo || null, created_at: p.created_at || null,
-        }));
+        // 로컬 전용 사진은 galleryPhotos에 따로 있으므로 캐시에서 제외 (중복 방지)
+        const slim = photos
+            .filter(p => !p.local && !String(p.id).startsWith('local-'))
+            .slice(0, 60)
+            .map(p => ({
+                id: p.id, thumb: p.thumb || null, photo_date: p.photo_date || null,
+                location: p.location || null, memo: p.memo || null, created_at: p.created_at || null,
+            }));
         localStorage.setItem('galleryCache', JSON.stringify(slim));
     } catch (e) { /* 용량 초과 시 캐시 생략 */ }
+}
+
+// id 기준 중복 제거 (같은 사진이 캐시·로컬에 겹쳐 있어도 한 번만)
+function dedupePhotos(arr) {
+    const seen = new Set();
+    return arr.filter(p => {
+        const k = String(p.id);
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+    });
 }
 function loadPhotosLocal() {
     try { const a = JSON.parse(localStorage.getItem('galleryPhotos') || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
@@ -2185,19 +2200,49 @@ async function openPhotoView(photo) {
     }
 }
 
-async function loadGallery() {
-    // 1) 기기에 저장된 마지막 목록으로 즉시 표시
-    const cached = loadGalleryCache();
+// DB가 다시 살아나면, 그동안 기기에만 저장된 사진을 DB로 옮김 (한 장씩, 성공한 것만 제거)
+async function migrateLocalPhotosToDB() {
+    if (!sb) return;
     const local = loadPhotosLocal();
+    if (!local.length) return;
+    const remain = [];
+    for (const p of local) {
+        try {
+            const row = { image: p.image, photo_date: p.photo_date || '', location: p.location || '', memo: p.memo || '' };
+            if (p.thumb) row.thumb = p.thumb;
+            let ins = await sb.from('photos').insert(row).select().single();
+            if (ins.error) {
+                delete row.thumb; delete row.memo;
+                ins = await sb.from('photos').insert(row).select().single();
+                if (ins.error) throw ins.error;
+            }
+        } catch (e) { remain.push(p); }
+    }
+    savePhotosLocal(remain);
+    if (remain.length < local.length) {
+        showToast('기기에 있던 사진을 공유 저장소로 옮겼어요 ✅');
+    }
+}
+
+async function loadGallery() {
+    // 1) 기기에 저장된 마지막 목록으로 즉시 표시 (중복 제거)
+    const cached = loadGalleryCache();
+    let local = loadPhotosLocal();
     if (cached.length || local.length) {
-        _photos = cached.concat(local);
+        _photos = dedupePhotos(cached.concat(local));
         sortPhotos();
         renderGallery();
     }
     // 2) 최신 목록으로 갱신
-    const db = await loadPhotosFromDB();
+    let db = await loadPhotosFromDB();
     if (db !== null) {
-        _photos = db.concat(local);
+        // DB가 살아있으면 기기에만 있던 사진을 DB로 이전 후 다시 로드
+        if (local.length) {
+            await migrateLocalPhotosToDB();
+            local = loadPhotosLocal();
+            db = await loadPhotosFromDB() || db;
+        }
+        _photos = dedupePhotos(db.concat(local));
         sortPhotos();
         renderGallery();
         saveGalleryCache(_photos);
