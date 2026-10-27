@@ -2551,12 +2551,52 @@ body::before {
     font-weight: 700;
     white-space: nowrap;
 }
-.pc-visit { display: flex; gap: 6px; flex: 0 0 auto; }
-.pc-visit + .pc-visit {
-    margin-left: 6px;
-    padding-left: 12px;
-    border-left: 2px dashed #f3c6d8;
+/* 방문별 슬라이드 */
+.pc-slider { position: relative; }
+#pcPhotos.pc-photos {
+    gap: 0;
+    scroll-snap-type: x mandatory;
+    overscroll-behavior-x: contain;
 }
+.pc-visit {
+    flex: 0 0 100%;
+    width: 100%;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 76px;
+    gap: 6px;
+    max-height: 158px;
+    overflow-y: auto;
+    padding: 0 2px;
+    scrollbar-width: none;
+}
+.pc-visit::-webkit-scrollbar { display: none; }
+#pcPhotos .pc-visit img { width: 100%; height: 76px; }
+.pc-visit .pc-nophoto { width: 100%; }
+.pc-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px; height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.92);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+    color: var(--primary-dark);
+    font-size: 1.3rem;
+    line-height: 1;
+    padding-bottom: 2px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+}
+.pc-arrow.show { display: flex; }
+.pc-arrow.prev { left: -6px; }
+.pc-arrow.next { right: -6px; }
 .pc-nophoto {
     width: 76px; height: 76px;
     flex: 0 0 auto;

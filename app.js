@@ -2522,7 +2522,7 @@ function showPlaceCard(key, opts) {
     document.getElementById('pcName').textContent = g.name;
     document.getElementById('pcAddr').textContent = g.address || '';
 
-    // 방문별 사진을 한 줄로 이어 붙이고, 스크롤 위치에 따라 오른쪽 위 "N 번째 방문" 표시
+    // 방문마다 한 슬라이드 — 옆으로 넘기면 다음 방문, 오른쪽 위에 "N 번째 방문" 표시
     const wrap = document.getElementById('pcPhotos');
     wrap.innerHTML = g.visits.map((v, i) => {
         const photos = v.photo_ids.map(photoById).filter(Boolean);
@@ -2541,10 +2541,8 @@ function showPlaceCard(key, opts) {
         ? Math.max(0, g.visits.findIndex(v => String(v.id) === String(opts.visitId)))
         : 0;
     setActiveVisit(startIdx);
-    if (startIdx > 0) {
-        const el = wrap.querySelector(`.pc-visit[data-i="${startIdx}"]`);
-        if (el) wrap.scrollLeft = el.offsetLeft - wrap.offsetLeft;
-    }
+    document.getElementById('placeCard').classList.add('show');
+    requestAnimationFrame(() => { wrap.scrollLeft = startIdx * wrap.clientWidth; });
 
     document.getElementById('placeCard').classList.add('show');
     document.getElementById('placesList').classList.add('hidden');
@@ -2561,18 +2559,25 @@ function setActiveVisit(i) {
     const label = document.getElementById('pcVisit');
     label.textContent = visitLabel(i);
     label.style.display = visits.length > 1 ? '' : 'none';
+    document.getElementById('pcPrev').classList.toggle('show', i > 0);
+    document.getElementById('pcNext').classList.toggle('show', i < visits.length - 1);
+}
+
+// 방문 슬라이드 이동
+function goVisit(delta) {
+    const wrap = document.getElementById('pcPhotos');
+    const n = (wrap._visits || []).length;
+    const cur = Math.round(wrap.scrollLeft / wrap.clientWidth);
+    const next = Math.max(0, Math.min(n - 1, cur + delta));
+    wrap.scrollTo({ left: next * wrap.clientWidth, behavior: 'smooth' });
 }
 
 function onCardPhotosScroll() {
     const wrap = document.getElementById('pcPhotos');
-    const groups = wrap.querySelectorAll('.pc-visit');
-    if (groups.length < 2) return;
-    const left = wrap.scrollLeft + wrap.clientWidth * 0.4;
-    let idx = 0;
-    groups.forEach((el, i) => { if (el.offsetLeft - wrap.offsetLeft <= left) idx = i; });
-    // 끝까지 밀면 마지막 방문
-    if (wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 2) idx = groups.length - 1;
-    setActiveVisit(idx);
+    const n = (wrap._visits || []).length;
+    if (n < 2 || !wrap.clientWidth) return;
+    const idx = Math.max(0, Math.min(n - 1, Math.round(wrap.scrollLeft / wrap.clientWidth)));
+    if (String(wrap._visits[idx].id) !== String(_activePlaceId)) setActiveVisit(idx);
 }
 
 function hidePlaceCard() {
@@ -2799,6 +2804,8 @@ async function deletePlace(id) {
     on('peQuery', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlaces(); } });
     on('peSave', 'click', savePlace);
     on('pcPhotos', 'scroll', onCardPhotosScroll);
+    on('pcPrev', 'click', () => goVisit(-1));
+    on('pcNext', 'click', () => goVisit(1));
     const eo = document.getElementById('placeEditOverlay');
     if (eo) eo.addEventListener('click', e => { if (e.target === eo) closePlaceEdit(); });
 })();

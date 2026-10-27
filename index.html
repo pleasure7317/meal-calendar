@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261027f">
+    <link rel="stylesheet" href="style.css?v=20261027h">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -129,7 +129,11 @@
                 <span class="pc-visit-label" id="pcVisit" style="display:none;"></span>
                 <button class="pc-close" id="pcClose" aria-label="닫기">✕</button>
             </div>
-            <div class="pc-photos" id="pcPhotos"></div>
+            <div class="pc-slider">
+                <div class="pc-photos" id="pcPhotos"></div>
+                <button class="pc-arrow prev" id="pcPrev" aria-label="이전 방문">‹</button>
+                <button class="pc-arrow next" id="pcNext" aria-label="다음 방문">›</button>
+            </div>
             <div class="pc-actions">
                 <button class="pc-btn" id="pcEdit">✏️ 편집</button>
                 <button class="pc-btn del" id="pcDelete">🗑️ 삭제</button>
@@ -312,6 +316,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261027g"></script>
+    <script src="app.js?v=20261027h"></script>
 </body>
 </html>
