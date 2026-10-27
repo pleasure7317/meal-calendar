@@ -2454,20 +2454,12 @@ function renderPlaceMarkers() {
 
 function fitPlaces() {
     if (!_placesMap) return;
-    if (!_places.length) {
-        _placesMap.setCenter(new naver.maps.LatLng(HONGCHEON.lat, HONGCHEON.lng));
-        _placesMap.setZoom(10);
-        return;
-    }
-    if (_places.length === 1) {
-        _placesMap.setCenter(new naver.maps.LatLng(_places[0].lat, _places[0].lng));
-        _placesMap.setZoom(14);
-        return;
-    }
-    const first = new naver.maps.LatLng(_places[0].lat, _places[0].lng);
-    const bounds = new naver.maps.LatLngBounds(first, first);
-    _places.forEach(p => bounds.extend(new naver.maps.LatLng(p.lat, p.lng)));
-    _placesMap.fitBounds(bounds, { top: 80, right: 50, bottom: 120, left: 50 });
+    // 기본 화면: 남한 전체가 보이게
+    const korea = new naver.maps.LatLngBounds(
+        new naver.maps.LatLng(33.9, 125.6),
+        new naver.maps.LatLng(38.6, 129.6)
+    );
+    _placesMap.fitBounds(korea, { top: 70, right: 10, bottom: 60, left: 10 });
 }
 
 function showPlaceCard(id, opts) {
