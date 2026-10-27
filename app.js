@@ -2339,10 +2339,13 @@ async function loadPlaces() {
 
 // 같은 장소(같은 이름 + 가까운 좌표)를 여러 번 등록하면 한 곳으로 묶음 — visits는 등록 순서
 // (같은 건물의 다른 가게는 좌표가 같을 수 있어서 이름도 같아야 묶음)
-function placeGroups() {
+function samePlace(a, b) {
     const norm = s => String(s || '').replace(/s+/g, '').toLowerCase();
-    const near = (a, b) => norm(a.name) === norm(b.name)
+    return norm(a.name) === norm(b.name)
         && Math.abs(a.lat - b.lat) < 0.001 && Math.abs(a.lng - b.lng) < 0.001;
+}
+function placeGroups() {
+    const near = samePlace;
     const sorted = _places.slice().sort((a, b) =>
         String(a.created_at || '').localeCompare(String(b.created_at || '')) || (a.id - b.id));
     const groups = [];
@@ -2638,6 +2641,25 @@ function renderPickedPlace() {
     if (!pk) { el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = '';
     el.innerHTML = `<span class="pe-sel-check">✓</span><div><b>${escapeHtml(pk.name)}</b><small>${escapeHtml(pk.address || '')}</small></div>`;
+    renderVisitNotice();
+}
+
+// 이미 같은 장소 기록이 있으면 "N 번째 방문이에요!" 안내
+function renderVisitNotice() {
+    const el = document.getElementById('peVisitNote');
+    const pk = _placeEdit.picked;
+    if (!el) return;
+    if (!pk) { el.style.display = 'none'; return; }
+    const name = document.getElementById('peName').value.trim() || pk.name;
+    const me = { name, lat: pk.lat, lng: pk.lng };
+    const isEdit = _placeEdit.id != null;
+    const editing = isEdit ? _places.find(p => String(p.id) === String(_placeEdit.id)) : null;
+    const prev = _places.filter(p => String(p.id) !== String(_placeEdit.id) && samePlace(p, me)
+        && (!editing || String(p.created_at || '') < String(editing.created_at || '')));
+    const others = _places.filter(p => String(p.id) !== String(_placeEdit.id) && samePlace(p, me)).length;
+    if (!others) { el.style.display = 'none'; return; }
+    el.textContent = `💕 ${visitLabel(prev.length)}이에요!`;
+    el.style.display = '';
 }
 
 async function searchLocalPlaces(q) {
@@ -2806,6 +2828,7 @@ async function deletePlace(id) {
     on('peSearchBtn', 'click', searchPlaces);
     on('peQuery', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlaces(); } });
     on('peSave', 'click', savePlace);
+    on('peName', 'input', renderVisitNotice);
     on('pcPhotos', 'scroll', onCardPhotosScroll);
     on('pcPrev', 'click', () => goVisit(-1));
     on('pcNext', 'click', () => goVisit(1));
