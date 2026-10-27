@@ -2337,9 +2337,12 @@ async function loadPlaces() {
     return _places;
 }
 
-// 같은 장소(거의 같은 좌표)를 여러 번 등록하면 한 곳으로 묶음 — visits는 등록 순서
+// 같은 장소(같은 이름 + 가까운 좌표)를 여러 번 등록하면 한 곳으로 묶음 — visits는 등록 순서
+// (같은 건물의 다른 가게는 좌표가 같을 수 있어서 이름도 같아야 묶음)
 function placeGroups() {
-    const near = (a, b) => Math.abs(a.lat - b.lat) < 0.0005 && Math.abs(a.lng - b.lng) < 0.0005;
+    const norm = s => String(s || '').replace(/s+/g, '').toLowerCase();
+    const near = (a, b) => norm(a.name) === norm(b.name)
+        && Math.abs(a.lat - b.lat) < 0.001 && Math.abs(a.lng - b.lng) < 0.001;
     const sorted = _places.slice().sort((a, b) =>
         String(a.created_at || '').localeCompare(String(b.created_at || '')) || (a.id - b.id));
     const groups = [];
