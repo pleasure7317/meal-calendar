@@ -2302,8 +2302,420 @@ async function loadGallery() {
     }
 })();
 
+// ==================== 우리가 가본 곳 (네이버 지도) ====================
+let _places = [];           // {id, name, address, lat, lng, photo_ids:[문자열 id]}
+let _placesMap = null;
+let _placeMarkers = [];
+let _activePlaceId = null;
+let _placesTableOk = true;
+let _naverMapReady = null;  // SDK 로드 Promise
+let _placeEdit = { id: null, picked: null, photoIds: [], autoName: '' };
+
+const HONGCHEON = { lat: 37.6971, lng: 127.8888 };
+const HEART_SVG = '<svg viewBox="0 0 24 24" width="20" height="20" fill="#e8a0bf"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+
+function normalizePlace(p) {
+    let ids = p.photo_ids;
+    if (typeof ids === 'string') { try { ids = JSON.parse(ids); } catch (e) { ids = []; } }
+    if (!Array.isArray(ids)) ids = [];
+    return { ...p, lat: Number(p.lat), lng: Number(p.lng), photo_ids: ids.map(String) };
+}
+
+async function loadPlaces() {
+    if (!sb) { _placesTableOk = false; return _places; }
+    try {
+        const { data, error } = await sb.from('places').select('*').order('created_at', { ascending: true });
+        if (error) throw error;
+        _placesTableOk = true;
+        _places = (data || []).map(normalizePlace);
+    } catch (e) {
+        console.warn('장소 로드 실패:', e);
+        _placesTableOk = false;
+    }
+    updatePlacesCount();
+    return _places;
+}
+
+function updatePlacesCount() {
+    const el = document.getElementById('placesCount');
+    if (el) el.textContent = _places.length ? `${_places.length}곳` : '';
+}
+
+function photoById(id) {
+    return _photos.find(p => String(p.id) === String(id));
+}
+function firstPlacePhotoSrc(place) {
+    const ph = place.photo_ids.map(photoById).find(Boolean);
+    return ph ? (ph.thumb || ph.image || '') : '';
+}
+
+function showPlacesMsg(msg) {
+    const el = document.getElementById('placesMsg');
+    if (!el) return;
+    el.innerHTML = msg || '';
+    el.style.display = msg ? '' : 'none';
+}
+
+// 네이버 지도 SDK는 지도를 처음 열 때만 불러옴 (첫 화면 속도 유지)
+function loadNaverMapSDK() {
+    if (window.naver && window.naver.maps && window.naver.maps.Map) return Promise.resolve(true);
+    if (_naverMapReady) return _naverMapReady;
+    _naverMapReady = (async () => {
+        const res = await fetch('/api/naver-config');
+        const cfg = res.ok ? await res.json() : {};
+        if (!cfg.mapKeyId) throw new Error('NO_KEY');
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId='
+                + encodeURIComponent(cfg.mapKeyId) + '&submodules=geocoder';
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('SDK_LOAD'));
+            document.head.appendChild(s);
+        });
+        return true;
+    })();
+    _naverMapReady.catch(() => { _naverMapReady = null; });
+    return _naverMapReady;
+}
+window.navermap_authFailure = function () {
+    showPlacesMsg('네이버 지도 인증에 실패했어요.<br>NCP 콘솔에 이 사이트 주소가 등록됐는지 확인해 주세요.');
+};
+
+async function openPlaces() {
+    const ov = document.getElementById('placesOverlay');
+    if (!ov) return;
+    ov.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    _activePlaceId = null;
+    document.getElementById('placeCard').classList.remove('show');
+    document.getElementById('placesList').classList.remove('hidden');
+    showPlacesMsg('');
+
+    await loadPlaces();
+    renderPlacesList();
+    if (!_placesTableOk) {
+        showPlacesMsg('장소 저장용 <b>places</b> 테이블이 아직 없어요.<br>Supabase에서 SQL을 실행해 주세요.');
+    }
+    try {
+        await loadNaverMapSDK();
+    } catch (e) {
+        showPlacesMsg(e.message === 'NO_KEY'
+            ? '네이버 지도 키(<b>NAVER_MAP_KEY_ID</b>)가 아직 설정되지 않았어요.'
+            : '네이버 지도를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+        return;
+    }
+    initPlacesMap();
+    renderPlaceMarkers();
+    fitPlaces();
+}
+
+function closePlaces() {
+    const ov = document.getElementById('placesOverlay');
+    if (ov) ov.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function initPlacesMap() {
+    if (_placesMap) {
+        naver.maps.Event.trigger(_placesMap, 'resize');
+        return;
+    }
+    _placesMap = new naver.maps.Map('placesMap', {
+        center: new naver.maps.LatLng(HONGCHEON.lat, HONGCHEON.lng),
+        zoom: 10,
+        zoomControl: false,
+        mapDataControl: false,
+        scaleControl: false,
+    });
+    naver.maps.Event.addListener(_placesMap, 'click', hidePlaceCard);
+}
+
+function markerHtml(place, active) {
+    const src = firstPlacePhotoSrc(place);
+    const inner = src ? `<img src="${src}" alt="">` : HEART_SVG;
+    return `<div class="place-marker${active ? ' active' : ''}"><div class="pm-bubble">${inner}</div><div class="pm-tail"></div></div>`;
+}
+
+function renderPlaceMarkers() {
+    if (!_placesMap) return;
+    _placeMarkers.forEach(m => m.setMap(null));
+    _placeMarkers = _places.map(p => {
+        const active = String(p.id) === String(_activePlaceId);
+        const m = new naver.maps.Marker({
+            position: new naver.maps.LatLng(p.lat, p.lng),
+            map: _placesMap,
+            icon: { content: markerHtml(p, active), anchor: new naver.maps.Point(21, 52) },
+            zIndex: active ? 100 : 1,
+        });
+        naver.maps.Event.addListener(m, 'click', () => showPlaceCard(p.id));
+        return m;
+    });
+}
+
+function fitPlaces() {
+    if (!_placesMap) return;
+    if (!_places.length) {
+        _placesMap.setCenter(new naver.maps.LatLng(HONGCHEON.lat, HONGCHEON.lng));
+        _placesMap.setZoom(10);
+        return;
+    }
+    if (_places.length === 1) {
+        _placesMap.setCenter(new naver.maps.LatLng(_places[0].lat, _places[0].lng));
+        _placesMap.setZoom(14);
+        return;
+    }
+    const first = new naver.maps.LatLng(_places[0].lat, _places[0].lng);
+    const bounds = new naver.maps.LatLngBounds(first, first);
+    _places.forEach(p => bounds.extend(new naver.maps.LatLng(p.lat, p.lng)));
+    _placesMap.fitBounds(bounds, { top: 80, right: 50, bottom: 120, left: 50 });
+}
+
+function showPlaceCard(id, opts) {
+    const p = _places.find(x => String(x.id) === String(id));
+    if (!p) return;
+    _activePlaceId = p.id;
+    document.getElementById('pcName').textContent = p.name;
+    document.getElementById('pcAddr').textContent = p.address || '';
+    const photos = p.photo_ids.map(photoById).filter(Boolean);
+    const wrap = document.getElementById('pcPhotos');
+    wrap.innerHTML = photos.length
+        ? photos.map(ph => `<img src="${ph.thumb || ph.image || ''}" data-id="${ph.id}" alt="" loading="lazy">`).join('')
+        : '<p class="pc-empty">연결된 사진이 없어요</p>';
+    wrap.querySelectorAll('img').forEach(img => {
+        img.addEventListener('click', () => { const ph = photoById(img.dataset.id); if (ph) openPhotoView(ph); });
+    });
+    document.getElementById('placeCard').classList.add('show');
+    document.getElementById('placesList').classList.add('hidden');
+    renderPlaceMarkers();
+    if (_placesMap) {
+        const ll = new naver.maps.LatLng(p.lat, p.lng);
+        if (opts && opts.zoom) _placesMap.morph(ll, opts.zoom);
+        else _placesMap.panTo(ll);
+    }
+}
+
+function hidePlaceCard() {
+    const card = document.getElementById('placeCard');
+    if (!card || !card.classList.contains('show')) return;
+    card.classList.remove('show');
+    document.getElementById('placesList').classList.remove('hidden');
+    _activePlaceId = null;
+    renderPlaceMarkers();
+}
+
+function renderPlacesList() {
+    const el = document.getElementById('placesList');
+    if (!el) return;
+    if (!_places.length) {
+        el.innerHTML = '<p class="pl-empty">아직 등록한 장소가 없어요. 오른쪽 위 <b>+ 추가</b>로 시작해 보세요.</p>';
+        return;
+    }
+    el.innerHTML = _places.slice().reverse().map(p => {
+        const src = firstPlacePhotoSrc(p);
+        const icon = src ? `<img src="${src}" alt="">` : `<span class="pl-dot">${HEART_SVG}</span>`;
+        return `<button class="pl-chip" data-id="${p.id}">${icon}<span class="pl-name">${escapeHtml(p.name)}</span></button>`;
+    }).join('');
+    el.querySelectorAll('.pl-chip').forEach(b => b.addEventListener('click', () => showPlaceCard(b.dataset.id)));
+}
+
+// ----- 추가/편집 -----
+function openPlaceEdit(id) {
+    const p = id != null ? _places.find(x => String(x.id) === String(id)) : null;
+    _placeEdit = {
+        id: p ? p.id : null,
+        picked: p ? { name: p.name, address: p.address, lat: p.lat, lng: p.lng } : null,
+        photoIds: p ? p.photo_ids.slice() : [],
+        autoName: '',
+    };
+    document.getElementById('peTitle').textContent = p ? '✏️ 장소 편집' : '📍 장소 추가';
+    document.getElementById('peQuery').value = '';
+    document.getElementById('peResults').innerHTML = '';
+    document.getElementById('peName').value = p ? p.name : '';
+    renderPickedPlace();
+    renderPhotoPicker();
+    document.getElementById('placeEditOverlay').classList.add('show');
+}
+
+function closePlaceEdit() {
+    document.getElementById('placeEditOverlay').classList.remove('show');
+}
+
+function renderPickedPlace() {
+    const el = document.getElementById('peSelected');
+    const pk = _placeEdit.picked;
+    if (!pk) { el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = '';
+    el.innerHTML = `<span class="pe-sel-check">✓</span><div><b>${escapeHtml(pk.name)}</b><small>${escapeHtml(pk.address || '')}</small></div>`;
+}
+
+async function searchLocalPlaces(q) {
+    try {
+        const res = await fetch('/api/place-search?q=' + encodeURIComponent(q));
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) return { items: [], error: j.error || '검색에 실패했어요' };
+        return { items: j.items || [], error: null };
+    } catch (e) {
+        return { items: [], error: '검색에 실패했어요' };
+    }
+}
+
+// 도로명/지번 주소 검색 (네이버 지도 SDK 지오코더)
+function searchGeocode(q) {
+    return new Promise(resolve => {
+        try {
+            if (!(window.naver && naver.maps && naver.maps.Service && naver.maps.Service.geocode)) return resolve([]);
+            naver.maps.Service.geocode({ query: q }, (status, response) => {
+                if (status !== naver.maps.Service.Status.OK) return resolve([]);
+                const addrs = (response && response.v2 && response.v2.addresses) || [];
+                resolve(addrs.slice(0, 3).map(a => ({
+                    name: a.roadAddress || a.jibunAddress,
+                    category: '주소',
+                    address: a.roadAddress || a.jibunAddress,
+                    lat: Number(a.y),
+                    lng: Number(a.x),
+                })));
+            });
+        } catch (e) { resolve([]); }
+    });
+}
+
+async function searchPlaces() {
+    const q = document.getElementById('peQuery').value.trim();
+    const box = document.getElementById('peResults');
+    if (!q) { showToast('검색어를 입력해 주세요'); return; }
+    box.innerHTML = '<p class="pe-hint">검색 중…</p>';
+    const [local, geo] = await Promise.all([searchLocalPlaces(q), searchGeocode(q)]);
+    const near = (a, b) => Math.abs(a.lat - b.lat) < 0.0003 && Math.abs(a.lng - b.lng) < 0.0003;
+    const results = local.items.concat(geo.filter(g => !local.items.some(l => near(l, g))));
+    if (!results.length) {
+        box.innerHTML = `<p class="pe-hint">${escapeHtml(local.error || '검색 결과가 없어요. 다른 이름이나 주소로 검색해 보세요.')}</p>`;
+        return;
+    }
+    box.innerHTML = results.map((r, i) => `
+        <button class="pe-result" data-i="${i}">
+            <b>${escapeHtml(r.name)}</b>
+            ${r.category ? `<em>${escapeHtml(r.category)}</em>` : ''}
+            <small>${escapeHtml(r.address || '')}</small>
+        </button>`).join('');
+    box.querySelectorAll('.pe-result').forEach(b => b.addEventListener('click', () => {
+        const r = results[parseInt(b.dataset.i, 10)];
+        _placeEdit.picked = { name: r.name, address: r.address, lat: r.lat, lng: r.lng };
+        const nameEl = document.getElementById('peName');
+        // 이름칸이 비어 있거나 자동으로 채운 값이면 선택한 장소 이름으로
+        if (!nameEl.value.trim() || nameEl.value === _placeEdit.autoName) {
+            nameEl.value = r.name;
+            _placeEdit.autoName = r.name;
+        }
+        box.innerHTML = '';
+        renderPickedPlace();
+    }));
+}
+
+function renderPhotoPicker() {
+    const box = document.getElementById('pePhotos');
+    const usable = _photos.filter(p => !p.local && !String(p.id).startsWith('local-'));
+    if (!usable.length) {
+        box.innerHTML = '<p class="pe-hint">어진이 갤러리에 올린 사진이 없어요.</p>';
+        updatePlacePhotoCount();
+        return;
+    }
+    box.innerHTML = usable.map(p => {
+        const on = _placeEdit.photoIds.includes(String(p.id));
+        return `<button class="pe-photo${on ? ' on' : ''}" data-id="${p.id}">
+            <img src="${p.thumb || p.image || ''}" alt="" loading="lazy">
+            <span class="pe-check">✓</span>
+            ${p.location ? `<em>${escapeHtml(p.location)}</em>` : ''}
+        </button>`;
+    }).join('');
+    box.querySelectorAll('.pe-photo').forEach(b => b.addEventListener('click', () => {
+        const id = String(b.dataset.id);
+        const i = _placeEdit.photoIds.indexOf(id);
+        if (i >= 0) _placeEdit.photoIds.splice(i, 1); else _placeEdit.photoIds.push(id);
+        b.classList.toggle('on');
+        updatePlacePhotoCount();
+    }));
+    updatePlacePhotoCount();
+}
+
+function updatePlacePhotoCount() {
+    const el = document.getElementById('pePhotoCount');
+    if (el) el.textContent = _placeEdit.photoIds.length ? `(${_placeEdit.photoIds.length}장)` : '';
+}
+
+async function savePlace() {
+    const pk = _placeEdit.picked;
+    if (!pk) { showToast('먼저 장소를 검색해서 선택해 주세요'); return; }
+    if (!sb) { showToast('저장소에 연결할 수 없어요'); return; }
+    const name = document.getElementById('peName').value.trim() || pk.name;
+    const row = {
+        name,
+        address: pk.address || '',
+        lat: pk.lat,
+        lng: pk.lng,
+        photo_ids: _placeEdit.photoIds.map(Number).filter(n => isFinite(n)),
+    };
+    const isEdit = _placeEdit.id != null;
+    const btn = document.getElementById('peSave');
+    btn.disabled = true;
+    try {
+        const q = isEdit
+            ? sb.from('places').update(row).eq('id', _placeEdit.id)
+            : sb.from('places').insert(row);
+        const { data, error } = await q.select().single();
+        if (error) throw error;
+        const saved = normalizePlace(data);
+        if (isEdit) _places = _places.map(p => String(p.id) === String(saved.id) ? saved : p);
+        else _places.push(saved);
+        closePlaceEdit();
+        updatePlacesCount();
+        renderPlacesList();
+        showToast(isEdit ? '장소를 수정했어요 ✏️' : '장소를 추가했어요 📍');
+        if (_placesMap) showPlaceCard(saved.id, { zoom: 15 });
+    } catch (e) {
+        console.warn('장소 저장 실패:', e);
+        showToast(_placesTableOk ? '저장에 실패했어요 😢' : 'places 테이블을 먼저 만들어 주세요');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deletePlace(id) {
+    const p = _places.find(x => String(x.id) === String(id));
+    if (!p || !sb) return;
+    if (!confirm(`'${p.name}'을(를) 지도에서 삭제할까요?`)) return;
+    try {
+        const { error } = await sb.from('places').delete().eq('id', id);
+        if (error) throw error;
+        _places = _places.filter(x => String(x.id) !== String(id));
+        hidePlaceCard();
+        renderPlaceMarkers();
+        renderPlacesList();
+        updatePlacesCount();
+        showToast('삭제했어요');
+    } catch (e) {
+        showToast('삭제에 실패했어요 😢');
+    }
+}
+
+(function setupPlaces() {
+    const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+    on('openPlaces', 'click', openPlaces);
+    on('placesClose', 'click', closePlaces);
+    on('placeAddBtn', 'click', () => openPlaceEdit(null));
+    on('pcClose', 'click', hidePlaceCard);
+    on('pcEdit', 'click', () => { if (_activePlaceId != null) openPlaceEdit(_activePlaceId); });
+    on('pcDelete', 'click', () => { if (_activePlaceId != null) deletePlace(_activePlaceId); });
+    on('placeEditClose', 'click', closePlaceEdit);
+    on('peSearchBtn', 'click', searchPlaces);
+    on('peQuery', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlaces(); } });
+    on('peSave', 'click', savePlace);
+    const eo = document.getElementById('placeEditOverlay');
+    if (eo) eo.addEventListener('click', e => { if (e.target === eo) closePlaceEdit(); });
+})();
+
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
+    try { loadPlaces(); } catch (e) { console.warn('장소 로드 실패:', e); }
     try { updateEnglishPhrase(); } catch (e) { console.warn('영어 구문 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
     try {

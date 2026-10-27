@@ -57,3 +57,17 @@ ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_photos" ON photos;
 CREATE POLICY "public_all_photos" ON photos
   FOR ALL USING (true) WITH CHECK (true);
+
+-- 우리가 가본 곳 (네이버 지도 핀)
+CREATE TABLE IF NOT EXISTS places (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  address TEXT,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  photo_ids JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE places ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "public_all_places" ON places;
+CREATE POLICY "public_all_places" ON places FOR ALL USING (true) WITH CHECK (true);

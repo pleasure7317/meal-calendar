@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20260610k">
+    <link rel="stylesheet" href="style.css?v=20261027a">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -51,6 +51,12 @@
             <div class="weather-hours" id="weatherHours">
                 <p class="weather-loading">날씨를 불러오는 중...</p>
             </div>
+            <button class="places-row" id="openPlaces">
+                <span class="places-row-icon">🗺️</span>
+                <span class="places-row-title">우리가 가본 곳</span>
+                <span class="places-row-count" id="placesCount"></span>
+                <span class="places-row-arrow">›</span>
+            </button>
         </div>
     </div>
 
@@ -100,6 +106,68 @@
             <button class="pa-btn edit" id="paEdit">✏️ 편집하기</button>
             <button class="pa-btn del" id="paDelete">🗑️ 삭제하기</button>
             <button class="pa-btn cancel" id="paCancel">취소</button>
+        </div>
+    </div>
+
+    <!-- 우리가 가본 곳: 전체 화면 지도 -->
+    <div class="places-overlay" id="placesOverlay">
+        <div class="places-header">
+            <button class="places-hbtn" id="placesClose" aria-label="닫기">✕</button>
+            <h3 class="places-htitle">🗺️ 우리가 가본 곳</h3>
+            <button class="places-hbtn add" id="placeAddBtn">+ 추가</button>
+        </div>
+        <div class="places-map" id="placesMap"></div>
+        <div class="places-msg" id="placesMsg" style="display:none;"></div>
+
+        <!-- 핀 눌렀을 때 상세 카드 -->
+        <div class="place-card" id="placeCard">
+            <div class="pc-top">
+                <div class="pc-info">
+                    <h4 class="pc-name" id="pcName"></h4>
+                    <p class="pc-addr" id="pcAddr"></p>
+                </div>
+                <button class="pc-close" id="pcClose" aria-label="닫기">✕</button>
+            </div>
+            <div class="pc-photos" id="pcPhotos"></div>
+            <div class="pc-actions">
+                <button class="pc-btn" id="pcEdit">✏️ 편집</button>
+                <button class="pc-btn del" id="pcDelete">🗑️ 삭제</button>
+            </div>
+        </div>
+
+        <!-- 장소 목록 (가로 스크롤) -->
+        <div class="places-list" id="placesList"></div>
+    </div>
+
+    <!-- 장소 추가/편집 -->
+    <div class="modal-overlay place-edit-overlay" id="placeEditOverlay">
+        <div class="modal place-edit-modal">
+            <button class="modal-close" id="placeEditClose">✕</button>
+            <h3 class="register-title" id="peTitle">📍 장소 추가</h3>
+
+            <div class="register-step">
+                <label class="register-label">장소 검색</label>
+                <div class="pe-search-row">
+                    <input type="text" id="peQuery" class="pu-loc-input" placeholder="가게 이름이나 주소로 검색" maxlength="60">
+                    <button class="pe-search-btn" id="peSearchBtn">검색</button>
+                </div>
+                <div class="pe-results" id="peResults"></div>
+                <div class="pe-selected" id="peSelected" style="display:none;"></div>
+            </div>
+
+            <div class="register-step">
+                <label class="register-label">이름</label>
+                <input type="text" id="peName" class="pu-loc-input" placeholder="지도에 표시될 이름" maxlength="40">
+            </div>
+
+            <div class="register-step">
+                <label class="register-label">사진 선택 <span class="pe-photo-count" id="pePhotoCount"></span></label>
+                <div class="pe-photos" id="pePhotos"></div>
+            </div>
+
+            <div class="pu-actions">
+                <button class="btn-primary" id="peSave">저장하기</button>
+            </div>
         </div>
     </div>
 
@@ -243,6 +311,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261015a"></script>
+    <script src="app.js?v=20261027a"></script>
 </body>
 </html>
