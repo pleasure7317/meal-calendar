@@ -2569,7 +2569,10 @@ function goVisit(delta) {
     const n = (wrap._visits || []).length;
     const cur = Math.round(wrap.scrollLeft / wrap.clientWidth);
     const next = Math.max(0, Math.min(n - 1, cur + delta));
-    wrap.scrollTo({ left: next * wrap.clientWidth, behavior: 'smooth' });
+    const left = next * wrap.clientWidth;
+    wrap.scrollTo({ left, behavior: 'smooth' });
+    // 부드러운 스크롤이 씹히는 브라우저 대비
+    setTimeout(() => { if (Math.abs(wrap.scrollLeft - left) > 2) wrap.scrollLeft = left; }, 600);
 }
 
 function onCardPhotosScroll() {
