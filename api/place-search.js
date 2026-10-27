@@ -21,14 +21,21 @@ export default async function handler(req, res) {
     }
 
     try {
-        const url = 'https://openapi.naver.com/v1/search/local.json'
-            + `?query=${encodeURIComponent(q)}&display=5&start=1&sort=random`;
-        const r = await fetch(url, {
-            headers: { 'X-Naver-Client-Id': id, 'X-Naver-Client-Secret': secret },
+        const qs = `?query=${encodeURIComponent(q)}&display=5&start=1`;
+        // NAVER API HUB(네이버 클라우드로 이관된 검색 API) 우선, 실패하면 기존 개발자센터 키 방식
+        let r = await fetch('https://naverapihub.apigw.ntruss.com/search/v1/local' + qs, {
+            headers: { 'X-NCP-APIGW-API-KEY-ID': id, 'X-NCP-APIGW-API-KEY': secret },
         });
-        const j = await r.json();
+        if (r.status === 401 || r.status === 403) {
+            r = await fetch('https://openapi.naver.com/v1/search/local.json' + qs, {
+                headers: { 'X-Naver-Client-Id': id, 'X-Naver-Client-Secret': secret },
+            });
+        }
+        const j = await r.json().catch(() => ({}));
         if (!r.ok) {
-            return res.status(r.status).json({ error: j.errorMessage || `검색 오류 (${r.status})` });
+            return res.status(r.status).json({
+                error: j.errorMessage || (j.error && j.error.message) || `검색 오류 (${r.status})`,
+            });
         }
         // mapx/mapy: WGS84 경도/위도 × 10^7
         const items = (j.items || []).map(it => ({
