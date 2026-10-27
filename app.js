@@ -2302,11 +2302,12 @@ async function loadGallery() {
     }
 })();
 
-// ==================== 우리가 가본 곳 (네이버 지도) ====================
+// ==================== 우리가 함께 가본 곳 (네이버 지도) ====================
 let _places = [];           // {id, name, address, lat, lng, photo_ids:[문자열 id]}
 let _placesMap = null;
 let _placeMarkers = [];
-let _activePlaceId = null;
+let _activePlaceId = null;   // 카드에서 보고 있는 방문(행) id — 편집/삭제 대상
+let _activeGroupKey = null;  // 선택된 핀(장소 묶음)
 let _placesTableOk = true;
 let _naverMapReady = null;  // SDK 로드 Promise
 let _placeEdit = { id: null, picked: null, photoIds: [], autoName: '' };
@@ -2336,9 +2337,40 @@ async function loadPlaces() {
     return _places;
 }
 
+// 같은 장소(거의 같은 좌표)를 여러 번 등록하면 한 곳으로 묶음 — visits는 등록 순서
+function placeGroups() {
+    const near = (a, b) => Math.abs(a.lat - b.lat) < 0.0005 && Math.abs(a.lng - b.lng) < 0.0005;
+    const sorted = _places.slice().sort((a, b) =>
+        String(a.created_at || '').localeCompare(String(b.created_at || '')) || (a.id - b.id));
+    const groups = [];
+    sorted.forEach(p => {
+        const g = groups.find(g => near(g.visits[0], p));
+        if (g) g.visits.push(p);
+        else groups.push({ key: String(p.id), visits: [p] });
+    });
+    groups.forEach(g => {
+        const last = g.visits[g.visits.length - 1];
+        g.name = last.name;
+        g.address = last.address;
+        g.lat = g.visits[0].lat;
+        g.lng = g.visits[0].lng;
+        g.photo_ids = [].concat(...g.visits.map(v => v.photo_ids));
+    });
+    return groups;
+}
+function groupOfPlace(id) {
+    return placeGroups().find(g => g.visits.some(v => String(v.id) === String(id)));
+}
+
+const VISIT_ORDINALS = ['첫', '두', '세', '네', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
+function visitLabel(i) {
+    return `${VISIT_ORDINALS[i] || (i + 1)} 번째 방문`;
+}
+
 function updatePlacesCount() {
     const el = document.getElementById('placesCount');
-    if (el) el.textContent = _places.length ? `${_places.length}곳` : '';
+    const n = placeGroups().length;
+    if (el) el.textContent = n ? `${n}곳` : '';
 }
 
 function photoById(id) {
@@ -2387,6 +2419,7 @@ async function openPlaces() {
     ov.classList.add('show');
     document.body.style.overflow = 'hidden';
     _activePlaceId = null;
+    _activeGroupKey = null;
     document.getElementById('placeCard').classList.remove('show');
     document.getElementById('placesList').classList.remove('hidden');
     showPlacesMsg('');
@@ -2430,25 +2463,33 @@ function initPlacesMap() {
     naver.maps.Event.addListener(_placesMap, 'click', hidePlaceCard);
 }
 
-function markerHtml(place, active) {
-    const src = firstPlacePhotoSrc(place);
+function markerHtml(group, active) {
+    const src = firstPlacePhotoSrc(group);
     const inner = src ? `<img src="${src}" alt="">` : HEART_SVG;
     return `<div class="place-marker${active ? ' active' : ''}"><div class="pm-bubble">${inner}</div><div class="pm-tail"></div></div>`;
 }
 
+// 장소 묶음당 핀 하나. 선택 상태만 바뀔 땐 아이콘만 교체 (전체 재생성 X → 깜빡임 없음)
 function renderPlaceMarkers() {
     if (!_placesMap) return;
-    _placeMarkers.forEach(m => m.setMap(null));
-    _placeMarkers = _places.map(p => {
-        const active = String(p.id) === String(_activePlaceId);
-        const m = new naver.maps.Marker({
-            position: new naver.maps.LatLng(p.lat, p.lng),
+    _placeMarkers.forEach(m => m.marker.setMap(null));
+    _placeMarkers = placeGroups().map(g => {
+        const marker = new naver.maps.Marker({
+            position: new naver.maps.LatLng(g.lat, g.lng),
             map: _placesMap,
-            icon: { content: markerHtml(p, active), anchor: new naver.maps.Point(21, 52) },
-            zIndex: active ? 100 : 1,
+            icon: { content: markerHtml(g, false), anchor: new naver.maps.Point(21, 52) },
+            zIndex: 1,
         });
-        naver.maps.Event.addListener(m, 'click', () => showPlaceCard(p.id));
-        return m;
+        naver.maps.Event.addListener(marker, 'click', () => showPlaceCard(g.key));
+        return { key: g.key, group: g, marker };
+    });
+    updateMarkerActive();
+}
+function updateMarkerActive() {
+    _placeMarkers.forEach(m => {
+        const active = m.key === _activeGroupKey;
+        m.marker.setIcon({ content: markerHtml(m.group, active), anchor: new naver.maps.Point(21, 52) });
+        m.marker.setZIndex(active ? 100 : 1);
     });
 }
 
@@ -2459,28 +2500,76 @@ function fitPlaces() {
     _placesMap.setZoom(7);
 }
 
-function showPlaceCard(id, opts) {
-    const p = _places.find(x => String(x.id) === String(id));
-    if (!p) return;
-    _activePlaceId = p.id;
-    document.getElementById('pcName').textContent = p.name;
-    document.getElementById('pcAddr').textContent = p.address || '';
-    const photos = p.photo_ids.map(photoById).filter(Boolean);
+// 핀 위치로 부드럽게 확대 — 아래 카드에 가리지 않게 핀을 화면 위쪽으로 살짝 올림
+function flyToPlace(lat, lng) {
+    if (!_placesMap) return;
+    const zoom = Math.max(_placesMap.getZoom(), 15);
+    const card = document.getElementById('placeCard');
+    const offsetPx = Math.min((card ? card.offsetHeight : 0) / 2, 160);
+    const degPerPx = 360 / (256 * Math.pow(2, zoom)) * Math.cos(lat * Math.PI / 180);
+    const target = new naver.maps.LatLng(lat - offsetPx * degPerPx, lng);
+    _placesMap.morph(target, zoom, { duration: 700, easing: 'easeOutCubic' });
+}
+
+function showPlaceCard(key, opts) {
+    const groups = placeGroups();
+    const g = groups.find(x => x.key === String(key)) || groupOfPlace(key);
+    if (!g) return;
+    _activeGroupKey = g.key;
+    document.getElementById('pcName').textContent = g.name;
+    document.getElementById('pcAddr').textContent = g.address || '';
+
+    // 방문별 사진을 한 줄로 이어 붙이고, 스크롤 위치에 따라 오른쪽 위 "N 번째 방문" 표시
     const wrap = document.getElementById('pcPhotos');
-    wrap.innerHTML = photos.length
-        ? photos.map(ph => `<img src="${ph.thumb || ph.image || ''}" data-id="${ph.id}" alt="" loading="lazy">`).join('')
-        : '<p class="pc-empty">연결된 사진이 없어요</p>';
+    wrap.innerHTML = g.visits.map((v, i) => {
+        const photos = v.photo_ids.map(photoById).filter(Boolean);
+        const tiles = photos.length
+            ? photos.map(ph => `<img src="${ph.thumb || ph.image || ''}" data-id="${ph.id}" alt="" loading="lazy">`).join('')
+            : '<div class="pc-nophoto">사진 없음</div>';
+        return `<div class="pc-visit" data-i="${i}">${tiles}</div>`;
+    }).join('');
     wrap.querySelectorAll('img').forEach(img => {
         img.addEventListener('click', () => { const ph = photoById(img.dataset.id); if (ph) openPhotoView(ph); });
     });
+    wrap._visits = g.visits;
+    wrap.scrollLeft = 0;
+
+    const startIdx = opts && opts.visitId != null
+        ? Math.max(0, g.visits.findIndex(v => String(v.id) === String(opts.visitId)))
+        : 0;
+    setActiveVisit(startIdx);
+    if (startIdx > 0) {
+        const el = wrap.querySelector(`.pc-visit[data-i="${startIdx}"]`);
+        if (el) wrap.scrollLeft = el.offsetLeft - wrap.offsetLeft;
+    }
+
     document.getElementById('placeCard').classList.add('show');
     document.getElementById('placesList').classList.add('hidden');
-    renderPlaceMarkers();
-    if (_placesMap) {
-        const ll = new naver.maps.LatLng(p.lat, p.lng);
-        if (opts && opts.zoom) _placesMap.morph(ll, opts.zoom);
-        else _placesMap.panTo(ll);
-    }
+    updateMarkerActive();
+    requestAnimationFrame(() => flyToPlace(g.lat, g.lng));
+}
+
+function setActiveVisit(i) {
+    const wrap = document.getElementById('pcPhotos');
+    const visits = wrap._visits || [];
+    const v = visits[i];
+    if (!v) return;
+    _activePlaceId = v.id;
+    const label = document.getElementById('pcVisit');
+    label.textContent = visitLabel(i);
+    label.style.display = visits.length > 1 ? '' : 'none';
+}
+
+function onCardPhotosScroll() {
+    const wrap = document.getElementById('pcPhotos');
+    const groups = wrap.querySelectorAll('.pc-visit');
+    if (groups.length < 2) return;
+    const left = wrap.scrollLeft + wrap.clientWidth * 0.4;
+    let idx = 0;
+    groups.forEach((el, i) => { if (el.offsetLeft - wrap.offsetLeft <= left) idx = i; });
+    // 끝까지 밀면 마지막 방문
+    if (wrap.scrollLeft + wrap.clientWidth >= wrap.scrollWidth - 2) idx = groups.length - 1;
+    setActiveVisit(idx);
 }
 
 function hidePlaceCard() {
@@ -2489,22 +2578,25 @@ function hidePlaceCard() {
     card.classList.remove('show');
     document.getElementById('placesList').classList.remove('hidden');
     _activePlaceId = null;
-    renderPlaceMarkers();
+    _activeGroupKey = null;
+    updateMarkerActive();
 }
 
 function renderPlacesList() {
     const el = document.getElementById('placesList');
     if (!el) return;
-    if (!_places.length) {
+    const groups = placeGroups();
+    if (!groups.length) {
         el.innerHTML = '<p class="pl-empty">아직 등록한 장소가 없어요. 오른쪽 위 <b>+ 추가</b>로 시작해 보세요.</p>';
         return;
     }
-    el.innerHTML = _places.slice().reverse().map(p => {
-        const src = firstPlacePhotoSrc(p);
+    el.innerHTML = groups.slice().reverse().map(g => {
+        const src = firstPlacePhotoSrc(g);
         const icon = src ? `<img src="${src}" alt="">` : `<span class="pl-dot">${HEART_SVG}</span>`;
-        return `<button class="pl-chip" data-id="${p.id}">${icon}<span class="pl-name">${escapeHtml(p.name)}</span></button>`;
+        const cnt = g.visits.length > 1 ? `<span class="pl-cnt">${g.visits.length}</span>` : '';
+        return `<button class="pl-chip" data-key="${g.key}">${icon}<span class="pl-name">${escapeHtml(g.name)}</span>${cnt}</button>`;
     }).join('');
-    el.querySelectorAll('.pl-chip').forEach(b => b.addEventListener('click', () => showPlaceCard(b.dataset.id)));
+    el.querySelectorAll('.pl-chip').forEach(b => b.addEventListener('click', () => showPlaceCard(b.dataset.key)));
 }
 
 // ----- 추가/편집 -----
@@ -2658,8 +2750,9 @@ async function savePlace() {
         closePlaceEdit();
         updatePlacesCount();
         renderPlacesList();
+        renderPlaceMarkers();
         showToast(isEdit ? '장소를 수정했어요 ✏️' : '장소를 추가했어요 📍');
-        if (_placesMap) showPlaceCard(saved.id, { zoom: 15 });
+        if (_placesMap) showPlaceCard(saved.id, { visitId: saved.id });
     } catch (e) {
         console.warn('장소 저장 실패:', e);
         showToast(_placesTableOk ? '저장에 실패했어요 😢' : 'places 테이블을 먼저 만들어 주세요');
@@ -2671,13 +2764,17 @@ async function savePlace() {
 async function deletePlace(id) {
     const p = _places.find(x => String(x.id) === String(id));
     if (!p || !sb) return;
-    if (!confirm(`'${p.name}'을(를) 지도에서 삭제할까요?`)) return;
+    const g = groupOfPlace(id);
+    const many = g && g.visits.length > 1;
+    const what = many ? `'${p.name}' ${visitLabel(g.visits.findIndex(v => String(v.id) === String(id)))} 기록을` : `'${p.name}'을(를) 지도에서`;
+    if (!confirm(`${what} 삭제할까요?`)) return;
     try {
         const { error } = await sb.from('places').delete().eq('id', id);
         if (error) throw error;
         _places = _places.filter(x => String(x.id) !== String(id));
-        hidePlaceCard();
         renderPlaceMarkers();
+        const rest = many ? placeGroups().find(x => x.visits.some(v => g.visits.some(o => String(o.id) === String(v.id)))) : null;
+        if (rest) showPlaceCard(rest.key); else hidePlaceCard();
         renderPlacesList();
         updatePlacesCount();
         showToast('삭제했어요');
@@ -2698,6 +2795,7 @@ async function deletePlace(id) {
     on('peSearchBtn', 'click', searchPlaces);
     on('peQuery', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); searchPlaces(); } });
     on('peSave', 'click', savePlace);
+    on('pcPhotos', 'scroll', onCardPhotosScroll);
     const eo = document.getElementById('placeEditOverlay');
     if (eo) eo.addEventListener('click', e => { if (e.target === eo) closePlaceEdit(); });
 })();
