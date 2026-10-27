@@ -2232,6 +2232,7 @@ body::before {
 }
 .places-header > * { pointer-events: auto; }
 .places-htitle {
+    white-space: nowrap;
     font-family: 'Gowun Batang', serif;
     font-size: 1rem;
     font-weight: 700;

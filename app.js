@@ -2595,7 +2595,7 @@ async function searchPlaces() {
         <button class="pe-result" data-i="${i}">
             <b>${escapeHtml(r.name)}</b>
             ${r.category ? `<em>${escapeHtml(r.category)}</em>` : ''}
-            <small>${escapeHtml(r.address || '')}</small>
+            <small>${r.address && r.address !== r.name ? escapeHtml(r.address) : ''}</small>
         </button>`).join('');
     box.querySelectorAll('.pe-result').forEach(b => b.addEventListener('click', () => {
         const r = results[parseInt(b.dataset.i, 10)];
