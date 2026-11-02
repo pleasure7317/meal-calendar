@@ -2638,7 +2638,7 @@ body::before {
     text-align: center;
 }
 
-/* ===== 어진이에게 읽어주고 싶은 글 (시·문구 모음) ===== */
+/* ===== 읽어주고 싶은 글 (시·문구 모음) ===== */
 .places-row + .places-row { margin-top: 8px; }
 .poems-overlay {
     display: none;

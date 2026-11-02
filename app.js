@@ -2836,7 +2836,7 @@ async function deletePlace(id) {
     if (eo) eo.addEventListener('click', e => { if (e.target === eo) closePlaceEdit(); });
 })();
 
-// ==================== 어진이에게 읽어주고 싶은 글 (시·문구 모음) ====================
+// ==================== 읽어주고 싶은 글 (시·문구 모음) ====================
 let _poems = [];
 let _poemsLoaded = false;
 let _poemActionId = null;

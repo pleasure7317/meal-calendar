@@ -72,7 +72,7 @@ ALTER TABLE places ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_places" ON places;
 CREATE POLICY "public_all_places" ON places FOR ALL USING (true) WITH CHECK (true);
 
--- 어진이에게 읽어주고 싶은 글 (시·문구 모음)
+-- 읽어주고 싶은 글 (시·문구 모음)
 CREATE TABLE IF NOT EXISTS poems (
   id SERIAL PRIMARY KEY,
   title TEXT,
