@@ -2848,6 +2848,7 @@ async function loadPoems() {
         const { data, error } = await sb.from('poems').select('*').order('created_at', { ascending: false });
         if (error) throw error;
         _poems = data || [];
+        sortPoems();
         _poemsLoaded = true;
     } catch (e) {
         console.warn('글 로드 실패:', e);
@@ -2856,10 +2857,25 @@ async function loadPoems() {
     return _poems;
 }
 
-function formatPoemDate(iso) {
-    const d = new Date(iso);
-    if (isNaN(d)) return '';
-    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+// 글 날짜: 직접 고른 날짜(post_date)가 우선, 없으면 올린 날
+function poemDate(p) {
+    if (p.post_date) return String(p.post_date).slice(0, 10);
+    const d = new Date(p.created_at);
+    return isNaN(d) ? '' : getMealKey(d);
+}
+function formatPoemDate(p) {
+    return poemDate(p).replace(/-/g, '.');
+}
+// 최신 날짜가 위, 같은 날이면 나중에 올린 게 위
+function sortPoems() {
+    _poems.sort((a, b) => poemDate(b).localeCompare(poemDate(a))
+        || String(b.created_at || '').localeCompare(String(a.created_at || '')));
+}
+
+function poemTileTitle(p) {
+    if (p.title) return p.title;
+    const first = String(p.body || '').split('\n').find(l => l.trim()) || '';
+    return first.length > 24 ? first.slice(0, 24) + '…' : first;
 }
 
 function renderPoems() {
@@ -2873,22 +2889,24 @@ function renderPoems() {
         list.innerHTML = '<p class="poems-empty">아직 담긴 글이 없어요.<br>오른쪽 위 <b>+</b>로 첫 글을 넣어 보세요.</p>';
         return;
     }
-    list.innerHTML = _poems.map(p => `
-        <article class="poem-card" data-id="${p.id}">
-            ${p.title ? `<h4 class="poem-title">${escapeHtml(p.title)}</h4>` : ''}
-            ${p.author ? `<p class="poem-author">${escapeHtml(p.author)}</p>` : ''}
-            <div class="poem-body">${escapeHtml(p.body || '')}</div>
-            <p class="poem-date">${formatPoemDate(p.created_at)}</p>
-        </article>`).join('');
+    // 정사각형 카드에 제목만 — 누르면 전체 글
+    list.innerHTML = '<div class="poem-grid">' + _poems.map(p => `
+        <button class="poem-tile${p.title ? '' : ' untitled'}" data-id="${p.id}">
+            <span class="pt-inner">
+                <span class="pt-title">${escapeHtml(poemTileTitle(p))}</span>
+                <span class="pt-date">${formatPoemDate(p)}</span>
+            </span>
+        </button>`).join('') + '</div>';
 
-    // 길게 누르면 편집/삭제 메뉴
-    list.querySelectorAll('.poem-card').forEach(el => {
+    // 짧게 누르면 읽기 / 길게 누르면 편집·삭제 메뉴
+    list.querySelectorAll('.poem-tile').forEach(el => {
         const id = el.dataset.id;
-        let timer = null, sx = 0, sy = 0;
+        let timer = null, longPressed = false, sx = 0, sy = 0;
         const start = (x, y) => {
-            sx = x; sy = y;
+            longPressed = false; sx = x; sy = y;
             timer = setTimeout(() => {
                 timer = null;
+                longPressed = true;
                 if (navigator.vibrate) navigator.vibrate(30);
                 openPoemActions(id);
             }, 550);
@@ -2904,7 +2922,28 @@ function renderPoems() {
         el.addEventListener('mouseup', cancel);
         el.addEventListener('mouseleave', cancel);
         el.addEventListener('contextmenu', e => e.preventDefault());
+        el.addEventListener('click', () => {
+            if (longPressed) { longPressed = false; return; }
+            openPoemReader(id);
+        });
     });
+}
+
+function openPoemReader(id) {
+    const p = _poems.find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById('poemReadContent').innerHTML = `
+        ${p.title ? `<h4 class="poem-title">${escapeHtml(p.title)}</h4>` : ''}
+        ${p.author ? `<p class="poem-author">${escapeHtml(p.author)}</p>` : ''}
+        <div class="poem-body">${escapeHtml(p.body || '')}</div>
+        <p class="poem-date">${formatPoemDate(p)}</p>`;
+    const ov = document.getElementById('poemReadOverlay');
+    ov.classList.add('show');
+    const m = ov.querySelector('.poem-read-modal');
+    if (m) m.scrollTop = 0;
+}
+function closePoemReader() {
+    document.getElementById('poemReadOverlay').classList.remove('show');
 }
 
 async function openPoems() {
@@ -2940,6 +2979,7 @@ function openPoemEdit(id) {
     document.getElementById('poTitleInput').value = p ? (p.title || '') : '';
     document.getElementById('poAuthorInput').value = p ? (p.author || '') : '';
     document.getElementById('poBodyInput').value = p ? (p.body || '') : '';
+    document.getElementById('poDateInput').value = p ? poemDate(p) : getMealKey(new Date());
     document.getElementById('poemEditOverlay').classList.add('show');
 }
 function closePoemEdit() {
@@ -2953,18 +2993,26 @@ async function savePoem() {
     const body = document.getElementById('poBodyInput').value.replace(/^(\s*\n)+/, '').replace(/\s+$/, '');
     if (!body.trim()) { showToast('본문을 입력해 주세요'); return; }
     if (!sb) { showToast('저장소에 연결할 수 없어요'); return; }
-    const row = { title, author, body };
+    const post_date = document.getElementById('poDateInput').value || getMealKey(new Date());
+    const row = { title, author, body, post_date };
     const isEdit = _editingPoemId != null;
     const btn = document.getElementById('poSave');
     btn.disabled = true;
+    const run = r => (isEdit
+        ? sb.from('poems').update(r).eq('id', _editingPoemId)
+        : sb.from('poems').insert(r)).select().single();
     try {
-        const q = isEdit
-            ? sb.from('poems').update(row).eq('id', _editingPoemId)
-            : sb.from('poems').insert(row);
-        const { data, error } = await q.select().single();
+        let { data, error } = await run(row);
+        // post_date 칸이 아직 없으면 날짜 없이 저장
+        if (error && /post_date/.test(error.message || '')) {
+            const { post_date: _omit, ...rest } = row;
+            ({ data, error } = await run(rest));
+            if (!error) setTimeout(() => showToast('날짜를 저장하려면 Supabase에 post_date 칸을 추가해 주세요'), 1800);
+        }
         if (error) throw error;
         if (isEdit) _poems = _poems.map(p => String(p.id) === String(data.id) ? data : p);
         else _poems.unshift(data);
+        sortPoems();
         _poemsLoaded = true;
         closePoemEdit();
         renderPoems();
@@ -3003,7 +3051,8 @@ async function deletePoem(id) {
     on('poaEdit', 'click', () => { const id = _poemActionId; closePoemActions(); if (id != null) openPoemEdit(id); });
     on('poaDelete', 'click', () => { const id = _poemActionId; closePoemActions(); if (id != null) deletePoem(id); });
     on('poaCancel', 'click', closePoemActions);
-    ['poemActionOverlay', 'poemEditOverlay'].forEach(oid => {
+    on('poemReadClose', 'click', closePoemReader);
+    ['poemActionOverlay', 'poemEditOverlay', 'poemReadOverlay'].forEach(oid => {
         const ov = document.getElementById(oid);
         if (ov) ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); });
     });

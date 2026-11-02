@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261102b">
+    <link rel="stylesheet" href="style.css?v=20261102d">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -124,6 +124,14 @@
         <div class="poems-list" id="poemsList"></div>
     </div>
 
+    <!-- 글 읽기 -->
+    <div class="modal-overlay poem-read-overlay" id="poemReadOverlay">
+        <div class="modal poem-read-modal">
+            <button class="modal-close" id="poemReadClose">✕</button>
+            <div class="poem-read-content" id="poemReadContent"></div>
+        </div>
+    </div>
+
     <!-- 글 길게 누르면 뜨는 메뉴 -->
     <div class="modal-overlay poem-action-overlay" id="poemActionOverlay">
         <div class="modal photo-action-modal">
@@ -145,6 +153,10 @@
             <div class="register-step">
                 <label class="register-label">글쓴이 <span class="po-optional">(선택)</span></label>
                 <input type="text" id="poAuthorInput" class="pu-loc-input" placeholder="예: 나태주, 영화 「비포 선라이즈」" maxlength="40">
+            </div>
+            <div class="register-step">
+                <label class="register-label">날짜</label>
+                <input type="date" id="poDateInput" class="period-input poem-date-input">
             </div>
             <div class="register-step">
                 <label class="register-label">본문</label>
@@ -364,6 +376,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261102c"></script>
+    <script src="app.js?v=20261102d"></script>
 </body>
 </html>
