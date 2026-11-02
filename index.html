@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>eojin.today</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css?v=20261027k">
+    <link rel="stylesheet" href="style.css?v=20261102b">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
 </head>
@@ -51,6 +51,11 @@
             <div class="weather-hours" id="weatherHours">
                 <p class="weather-loading">날씨를 불러오는 중...</p>
             </div>
+            <button class="places-row" id="openPoems">
+                <span class="places-row-icon">📖</span>
+                <span class="places-row-title">어진이에게 읽어주고 싶은 글</span>
+                <span class="places-row-arrow">›</span>
+            </button>
             <button class="places-row" id="openPlaces">
                 <span class="places-row-icon">🗺️</span>
                 <span class="places-row-title">우리가 함께 가본 곳</span>
@@ -106,6 +111,48 @@
             <button class="pa-btn edit" id="paEdit">✏️ 편집하기</button>
             <button class="pa-btn del" id="paDelete">🗑️ 삭제하기</button>
             <button class="pa-btn cancel" id="paCancel">취소</button>
+        </div>
+    </div>
+
+    <!-- 어진이에게 읽어주고 싶은 글: 시·문구 모음 (최신이 위) -->
+    <div class="poems-overlay" id="poemsOverlay">
+        <div class="poems-header">
+            <button class="places-hbtn" id="poemsClose" aria-label="닫기">✕</button>
+            <h3 class="places-htitle poems-htitle">어진이에게 읽어주고 싶은 글</h3>
+            <button class="places-hbtn add icon" id="poemAddBtn" aria-label="글 추가">+</button>
+        </div>
+        <div class="poems-list" id="poemsList"></div>
+    </div>
+
+    <!-- 글 길게 누르면 뜨는 메뉴 -->
+    <div class="modal-overlay poem-action-overlay" id="poemActionOverlay">
+        <div class="modal photo-action-modal">
+            <button class="pa-btn edit" id="poaEdit">✏️ 편집하기</button>
+            <button class="pa-btn del" id="poaDelete">🗑️ 삭제하기</button>
+            <button class="pa-btn cancel" id="poaCancel">취소</button>
+        </div>
+    </div>
+
+    <!-- 글 추가/편집 -->
+    <div class="modal-overlay poem-edit-overlay" id="poemEditOverlay">
+        <div class="modal poem-edit-modal">
+            <button class="modal-close" id="poemEditClose">✕</button>
+            <h3 class="register-title" id="poTitle">✒️ 글 추가</h3>
+            <div class="register-step">
+                <label class="register-label">제목 <span class="po-optional">(선택)</span></label>
+                <input type="text" id="poTitleInput" class="pu-loc-input" placeholder="제목이 없으면 비워 두세요" maxlength="60">
+            </div>
+            <div class="register-step">
+                <label class="register-label">글쓴이 <span class="po-optional">(선택)</span></label>
+                <input type="text" id="poAuthorInput" class="pu-loc-input" placeholder="예: 나태주, 영화 「비포 선라이즈」" maxlength="40">
+            </div>
+            <div class="register-step">
+                <label class="register-label">본문</label>
+                <textarea id="poBodyInput" class="pu-memo-input poem-body-input" placeholder="줄바꿈과 빈 줄이 그대로 보여요" rows="10"></textarea>
+            </div>
+            <div class="pu-actions">
+                <button class="btn-primary" id="poSave">저장하기</button>
+            </div>
         </div>
     </div>
 
@@ -317,6 +364,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20261027j"></script>
+    <script src="app.js?v=20261102b"></script>
 </body>
 </html>

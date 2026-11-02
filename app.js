@@ -2836,6 +2836,179 @@ async function deletePlace(id) {
     if (eo) eo.addEventListener('click', e => { if (e.target === eo) closePlaceEdit(); });
 })();
 
+// ==================== 어진이에게 읽어주고 싶은 글 (시·문구 모음) ====================
+let _poems = [];
+let _poemsLoaded = false;
+let _poemActionId = null;
+let _editingPoemId = null;
+
+async function loadPoems() {
+    if (!sb) return _poems;
+    try {
+        const { data, error } = await sb.from('poems').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        _poems = data || [];
+        _poemsLoaded = true;
+    } catch (e) {
+        console.warn('글 로드 실패:', e);
+        _poemsLoaded = false;
+    }
+    return _poems;
+}
+
+function formatPoemDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function renderPoems() {
+    const list = document.getElementById('poemsList');
+    if (!list) return;
+    if (!_poemsLoaded && !_poems.length) {
+        list.innerHTML = '<p class="poems-empty">글을 불러오지 못했어요.<br>Supabase에 <b>poems</b> 테이블이 있는지 확인해 주세요.</p>';
+        return;
+    }
+    if (!_poems.length) {
+        list.innerHTML = '<p class="poems-empty">아직 담긴 글이 없어요.<br>오른쪽 위 <b>+</b>로 첫 글을 넣어 보세요.</p>';
+        return;
+    }
+    list.innerHTML = _poems.map(p => `
+        <article class="poem-card" data-id="${p.id}">
+            ${p.title ? `<h4 class="poem-title">${escapeHtml(p.title)}</h4>` : ''}
+            ${p.author ? `<p class="poem-author">${escapeHtml(p.author)}</p>` : ''}
+            <div class="poem-body">${escapeHtml(p.body || '')}</div>
+            <p class="poem-date">${formatPoemDate(p.created_at)}</p>
+        </article>`).join('');
+
+    // 길게 누르면 편집/삭제 메뉴
+    list.querySelectorAll('.poem-card').forEach(el => {
+        const id = el.dataset.id;
+        let timer = null, sx = 0, sy = 0;
+        const start = (x, y) => {
+            sx = x; sy = y;
+            timer = setTimeout(() => {
+                timer = null;
+                if (navigator.vibrate) navigator.vibrate(30);
+                openPoemActions(id);
+            }, 550);
+        };
+        const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+        el.addEventListener('touchstart', e => start(e.touches[0].clientX, e.touches[0].clientY), { passive: true });
+        el.addEventListener('touchmove', e => {
+            if (Math.abs(e.touches[0].clientX - sx) > 10 || Math.abs(e.touches[0].clientY - sy) > 10) cancel();
+        }, { passive: true });
+        el.addEventListener('touchend', cancel);
+        el.addEventListener('touchcancel', cancel);
+        el.addEventListener('mousedown', e => start(e.clientX, e.clientY));
+        el.addEventListener('mouseup', cancel);
+        el.addEventListener('mouseleave', cancel);
+        el.addEventListener('contextmenu', e => e.preventDefault());
+    });
+}
+
+async function openPoems() {
+    const ov = document.getElementById('poemsOverlay');
+    if (!ov) return;
+    ov.classList.add('show');
+    ov.scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    if (!_poems.length) document.getElementById('poemsList').innerHTML = '<p class="poems-empty">불러오는 중…</p>';
+    else renderPoems();
+    await loadPoems();
+    renderPoems();
+}
+
+function closePoems() {
+    document.getElementById('poemsOverlay').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function openPoemActions(id) {
+    _poemActionId = id;
+    document.getElementById('poemActionOverlay').classList.add('show');
+}
+function closePoemActions() {
+    _poemActionId = null;
+    document.getElementById('poemActionOverlay').classList.remove('show');
+}
+
+function openPoemEdit(id) {
+    const p = id != null ? _poems.find(x => String(x.id) === String(id)) : null;
+    _editingPoemId = p ? p.id : null;
+    document.getElementById('poTitle').textContent = p ? '✏️ 글 편집' : '✒️ 글 추가';
+    document.getElementById('poTitleInput').value = p ? (p.title || '') : '';
+    document.getElementById('poAuthorInput').value = p ? (p.author || '') : '';
+    document.getElementById('poBodyInput').value = p ? (p.body || '') : '';
+    document.getElementById('poemEditOverlay').classList.add('show');
+}
+function closePoemEdit() {
+    document.getElementById('poemEditOverlay').classList.remove('show');
+}
+
+async function savePoem() {
+    const title = document.getElementById('poTitleInput').value.trim();
+    const author = document.getElementById('poAuthorInput').value.trim();
+    // 앞뒤 빈 줄만 정리하고 줄바꿈·연 구분은 그대로
+    const body = document.getElementById('poBodyInput').value.replace(/^(\s*\n)+/, '').replace(/\s+$/, '');
+    if (!body.trim()) { showToast('본문을 입력해 주세요'); return; }
+    if (!sb) { showToast('저장소에 연결할 수 없어요'); return; }
+    const row = { title, author, body };
+    const isEdit = _editingPoemId != null;
+    const btn = document.getElementById('poSave');
+    btn.disabled = true;
+    try {
+        const q = isEdit
+            ? sb.from('poems').update(row).eq('id', _editingPoemId)
+            : sb.from('poems').insert(row);
+        const { data, error } = await q.select().single();
+        if (error) throw error;
+        if (isEdit) _poems = _poems.map(p => String(p.id) === String(data.id) ? data : p);
+        else _poems.unshift(data);
+        _poemsLoaded = true;
+        closePoemEdit();
+        renderPoems();
+        if (!isEdit) document.getElementById('poemsOverlay').scrollTo({ top: 0, behavior: 'smooth' });
+        showToast(isEdit ? '글을 수정했어요 ✏️' : '글을 담았어요 ✒️');
+    } catch (e) {
+        console.warn('글 저장 실패:', e);
+        showToast('저장에 실패했어요 😢');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function deletePoem(id) {
+    const p = _poems.find(x => String(x.id) === String(id));
+    if (!p || !sb) return;
+    if (!confirm(p.title ? `'${p.title}'을(를) 삭제할까요?` : '이 글을 삭제할까요?')) return;
+    try {
+        const { error } = await sb.from('poems').delete().eq('id', id);
+        if (error) throw error;
+        _poems = _poems.filter(x => String(x.id) !== String(id));
+        renderPoems();
+        showToast('삭제했어요');
+    } catch (e) {
+        showToast('삭제에 실패했어요 😢');
+    }
+}
+
+(function setupPoems() {
+    const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+    on('openPoems', 'click', openPoems);
+    on('poemsClose', 'click', closePoems);
+    on('poemAddBtn', 'click', () => openPoemEdit(null));
+    on('poemEditClose', 'click', closePoemEdit);
+    on('poSave', 'click', savePoem);
+    on('poaEdit', 'click', () => { const id = _poemActionId; closePoemActions(); if (id != null) openPoemEdit(id); });
+    on('poaDelete', 'click', () => { const id = _poemActionId; closePoemActions(); if (id != null) deletePoem(id); });
+    on('poaCancel', 'click', closePoemActions);
+    ['poemActionOverlay', 'poemEditOverlay'].forEach(oid => {
+        const ov = document.getElementById(oid);
+        if (ov) ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('show'); });
+    });
+})();
+
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
     try { loadPlaces(); } catch (e) { console.warn('장소 로드 실패:', e); }

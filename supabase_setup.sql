@@ -71,3 +71,15 @@ CREATE TABLE IF NOT EXISTS places (
 ALTER TABLE places ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "public_all_places" ON places;
 CREATE POLICY "public_all_places" ON places FOR ALL USING (true) WITH CHECK (true);
+
+-- 어진이에게 읽어주고 싶은 글 (시·문구 모음)
+CREATE TABLE IF NOT EXISTS poems (
+  id SERIAL PRIMARY KEY,
+  title TEXT,
+  author TEXT,
+  body TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE poems ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "public_all_poems" ON poems;
+CREATE POLICY "public_all_poems" ON poems FOR ALL USING (true) WITH CHECK (true);
