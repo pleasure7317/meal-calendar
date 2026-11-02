@@ -2676,8 +2676,8 @@ body::before {
 /* 정사각형 카드 (제목만) */
 .poem-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px;
 }
 .poem-tile {
     position: relative;
@@ -2704,19 +2704,19 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 18px 14px;
+    padding: 12px 8px 18px;
 }
 .pt-title {
     font-family: 'Gowun Batang', serif;
-    font-size: 1.02rem;
+    font-size: 0.86rem;
     font-weight: 700;
-    line-height: 1.55;
+    line-height: 1.45;
     color: #37474f;
     text-align: center;
     word-break: keep-all;
     overflow-wrap: anywhere;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -2724,8 +2724,8 @@ body::before {
 .pt-date {
     position: absolute;
     left: 0; right: 0;
-    bottom: 12px;
-    font-size: 0.7rem;
+    bottom: 8px;
+    font-size: 0.6rem;
     color: #b0bec5;
     text-align: center;
 }
