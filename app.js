@@ -2451,22 +2451,41 @@ async function openPlaces() {
     document.getElementById('placesList').classList.remove('hidden');
     showPlacesMsg('');
 
-    await loadPlaces();
+    // 지도 SDK와 장소 목록을 동시에 불러옴 (홈에서 미리 받아 둔 게 있으면 바로 사용)
+    const sdk = loadNaverMapSDK();
+    const placesReady = loadPlaces();
+    if (_places.length) renderPlacesList();
+
+    let sdkOk = true;
+    try {
+        await sdk;
+    } catch (e) {
+        sdkOk = false;
+        showPlacesMsg(e.message === 'NO_KEY'
+            ? '네이버 지도 키(<b>NAVER_MAP_KEY_ID</b>)가 아직 설정되지 않았어요.'
+            : '네이버 지도를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
+    }
+    if (sdkOk) {
+        initPlacesMap();
+        fitPlaces();
+        if (_places.length) renderPlaceMarkers();
+    }
+
+    await placesReady;
     renderPlacesList();
     if (!_placesTableOk) {
         showPlacesMsg('장소 저장용 <b>places</b> 테이블이 아직 없어요.<br>Supabase에서 SQL을 실행해 주세요.');
     }
-    try {
-        await loadNaverMapSDK();
-    } catch (e) {
-        showPlacesMsg(e.message === 'NO_KEY'
-            ? '네이버 지도 키(<b>NAVER_MAP_KEY_ID</b>)가 아직 설정되지 않았어요.'
-            : '네이버 지도를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');
-        return;
-    }
-    initPlacesMap();
-    renderPlaceMarkers();
-    fitPlaces();
+    if (sdkOk) renderPlaceMarkers();
+}
+
+// 홈이 다 뜬 뒤 한가할 때 네이버 지도 SDK를 미리 받아 둠 → 지도 열 때 바로 뜸
+function preloadNaverMap() {
+    const go = () => loadNaverMapSDK().catch(() => {});
+    setTimeout(() => {
+        if (window.requestIdleCallback) requestIdleCallback(go, { timeout: 4000 });
+        else go();
+    }, 1500);
 }
 
 function closePlaces() {
@@ -2480,8 +2499,8 @@ function initPlacesMap() {
         return;
     }
     _placesMap = new naver.maps.Map('placesMap', {
-        center: new naver.maps.LatLng(HONGCHEON.lat, HONGCHEON.lng),
-        zoom: 10,
+        center: new naver.maps.LatLng(36.6, 127.7),
+        zoom: 7,
         zoomControl: false,
         mapDataControl: false,
         scaleControl: false,
@@ -3081,6 +3100,7 @@ async function deletePoem(id) {
 async function init() {
     try { updateDday(); } catch (e) { console.warn('D-day 표시 실패:', e); }
     try { loadPlaces(); } catch (e) { console.warn('장소 로드 실패:', e); }
+    try { preloadNaverMap(); } catch (e) { /* 지도 미리 받기 실패해도 열 때 다시 시도 */ }
     try { updateEnglishPhrase(); } catch (e) { console.warn('영어 구문 표시 실패:', e); }
     // 날씨는 DB 로드를 기다리지 않고 즉시 병렬로 불러옴
     try {
