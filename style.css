@@ -2732,7 +2732,8 @@ body::before {
 
 /* 읽기 창 */
 .poem-read-overlay { z-index: 1100; }
-.poem-read-modal { max-width: 460px; }
+.poem-read-modal { max-width: 460px; overscroll-behavior: contain; }
+.poem-read-overlay, .poem-edit-overlay, .poem-action-overlay { overscroll-behavior: contain; }
 .poem-read-content { padding: 44px 26px 28px; text-align: center; }
 .poem-date-input { width: 100%; }
 

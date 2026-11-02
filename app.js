@@ -2302,6 +2302,27 @@ async function loadGallery() {
     }
 })();
 
+// 전체 화면 창이 떠 있는 동안 뒤 홈 화면이 같이 스크롤되지 않게 고정
+// (모바일 브라우저는 overflow:hidden만으로는 뒤 페이지가 밀림)
+let _scrollLockY = 0, _scrollLocks = 0;
+function lockBodyScroll() {
+    if (_scrollLocks++ > 0) return;
+    _scrollLockY = window.scrollY || document.documentElement.scrollTop || 0;
+    const b = document.body.style;
+    b.position = 'fixed';
+    b.top = -_scrollLockY + 'px';
+    b.left = '0';
+    b.right = '0';
+    b.width = '100%';
+    b.overflow = 'hidden';
+}
+function unlockBodyScroll() {
+    if (_scrollLocks === 0 || --_scrollLocks > 0) return;
+    const b = document.body.style;
+    b.position = b.top = b.left = b.right = b.width = b.overflow = '';
+    window.scrollTo(0, _scrollLockY);
+}
+
 // ==================== 우리가 함께 가본 곳 (네이버 지도) ====================
 let _places = [];           // {id, name, address, lat, lng, photo_ids:[문자열 id]}
 let _placesMap = null;
@@ -2422,8 +2443,8 @@ window.navermap_authFailure = function () {
 async function openPlaces() {
     const ov = document.getElementById('placesOverlay');
     if (!ov) return;
+    if (!ov.classList.contains('show')) lockBodyScroll();
     ov.classList.add('show');
-    document.body.style.overflow = 'hidden';
     _activePlaceId = null;
     _activeGroupKey = null;
     document.getElementById('placeCard').classList.remove('show');
@@ -2450,8 +2471,7 @@ async function openPlaces() {
 
 function closePlaces() {
     const ov = document.getElementById('placesOverlay');
-    if (ov) ov.classList.remove('show');
-    document.body.style.overflow = '';
+    if (ov && ov.classList.contains('show')) { ov.classList.remove('show'); unlockBodyScroll(); }
 }
 
 function initPlacesMap() {
@@ -2949,9 +2969,9 @@ function closePoemReader() {
 async function openPoems() {
     const ov = document.getElementById('poemsOverlay');
     if (!ov) return;
+    if (!ov.classList.contains('show')) lockBodyScroll();
     ov.classList.add('show');
     ov.scrollTop = 0;
-    document.body.style.overflow = 'hidden';
     if (!_poems.length) document.getElementById('poemsList').innerHTML = '<p class="poems-empty">불러오는 중…</p>';
     else renderPoems();
     await loadPoems();
@@ -2959,8 +2979,8 @@ async function openPoems() {
 }
 
 function closePoems() {
-    document.getElementById('poemsOverlay').classList.remove('show');
-    document.body.style.overflow = '';
+    const ov = document.getElementById('poemsOverlay');
+    if (ov.classList.contains('show')) { ov.classList.remove('show'); unlockBodyScroll(); }
 }
 
 function openPoemActions(id) {
